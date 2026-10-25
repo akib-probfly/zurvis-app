@@ -1,6 +1,6 @@
 import * as Clipboard from 'expo-clipboard';
 import { Check, CheckCheck, FileText, ExternalLink, ChevronDown, ChevronUp, Megaphone, Sparkles, Image as ImageIcon, Video, Mic, MapPin, ContactRound, Copy, Phone, Mail, Building2, PackagePlus } from 'lucide-react-native';
-import { useEffect, useState, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { ActivityIndicator, Linking, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { WebView } from 'react-native-webview';
 import { AuthenticatedImage } from './AuthenticatedImage';
@@ -202,13 +202,16 @@ function StandardMessageBubble({ message, outgoing, attachments, replyPreview, r
   const statusMeta = outgoing ? getOutboundStatusMeta(message.deliveryStatus) : null;
   const edited = isMessageEdited(message);
   const failedReason = outgoing && statusMeta?.showFailed ? getMessageFailureReason(message) : null;
-  const [expanded, setExpanded] = useState(false);
-  const [canExpand, setCanExpand] = useState(false);
+  const bodyKey = `${message.id}\u0000${body}`;
+  const [expandedBodyKey, setExpandedBodyKey] = useState<string | null>(null);
+  const [overflowBodyKey, setOverflowBodyKey] = useState<string | null>(null);
+  const expanded = expandedBodyKey === bodyKey;
+  // Native line measurements can be missing or delayed in recycled list cells.
+  // Clearly long bodies must still start collapsed and expose the toggle.
+  const canExpand = overflowBodyKey === bodyKey
+    || body.length > 400
+    || body.split('\n').length > COLLAPSED_LINE_COUNT;
   const [openingDocumentId, setOpeningDocumentId] = useState<string | null>(null);
-  useEffect(() => {
-    setExpanded(false);
-    setCanExpand(false);
-  }, [message.id]);
 
   function renderBody() {
     if (!body) return null;
@@ -222,7 +225,7 @@ function StandardMessageBubble({ message, outgoing, attachments, replyPreview, r
           style={outgoing ? styles.outgoingText : [styles.messageText, { color: colors.text }]}
           numberOfLines={clamp ? COLLAPSED_LINE_COUNT : undefined}
           onTextLayout={(e) => {
-            if (!canExpand && e.nativeEvent.lines.length > COLLAPSED_LINE_COUNT) setCanExpand(true);
+            if (!canExpand && e.nativeEvent.lines.length > COLLAPSED_LINE_COUNT) setOverflowBodyKey(bodyKey);
           }}
         >
           {bodyParts.map((part, index) => part.type === 'url' ? (
@@ -232,7 +235,14 @@ function StandardMessageBubble({ message, outgoing, attachments, replyPreview, r
           ))}
         </Text>
         {canExpand ? (
-          <Pressable onPress={() => setExpanded((v) => !v)} hitSlop={6} style={styles.readMoreRow}>
+          <Pressable
+            onPress={() => setExpandedBodyKey(expanded ? null : bodyKey)}
+            hitSlop={6}
+            style={styles.readMoreRow}
+            accessibilityRole="button"
+            accessibilityLabel={expanded ? 'Read less' : 'Read more'}
+            accessibilityState={{ expanded }}
+          >
             {expanded ? <ChevronUp color={outgoing ? '#eaf1ff' : colors.primary} size={13} /> : <ChevronDown color={outgoing ? '#eaf1ff' : colors.primary} size={13} />}
             <Text style={[styles.readMore, outgoing && styles.outgoingLink, !outgoing && { color: colors.primary }]}>{expanded ? 'Read less' : 'Read more'}</Text>
           </Pressable>
