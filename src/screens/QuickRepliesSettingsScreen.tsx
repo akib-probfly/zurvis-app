@@ -51,6 +51,7 @@ import { ErrorState } from '../components/ErrorState';
 import { BottomSheet, SheetFlatList, SheetScrollView } from '../components/BottomSheet';
 import { FormSkeleton, ListSkeleton } from '../components/Skeleton';
 import { AuthenticatedImage } from '../components/AuthenticatedImage';
+import { ChannelLogo } from '../components/ChannelLogo';
 
 const MAX_ATTACHMENT_BYTES = 5 * 1024 * 1024;
 const MAX_ATTACHMENTS = 100;
@@ -522,6 +523,7 @@ export function QuickRepliesSettingsScreen() {
                       }))}
                       style={[styles.selectedChip, { backgroundColor: colors.surfaceSecondary, borderColor: colors.cardBorder }]}
                     >
+                      <ChannelLogo type={account.type} box={20} glyph={12} radius={6} />
                       <Text style={[styles.selectedChipText, { color: colors.text }]} numberOfLines={1}>{account.label}</Text>
                       <X color={colors.textMuted} size={12} />
                     </Pressable>
@@ -672,6 +674,7 @@ export function QuickRepliesSettingsScreen() {
                 }))}
                 style={[styles.channelRow, { backgroundColor: selected ? colors.surfaceSecondary : colors.background, borderColor: selected ? colors.primary : colors.cardBorder }]}
               >
+                <ChannelLogo type={item.type} box={32} glyph={18} radius={10} />
                 <View style={styles.channelCopy}>
                   <Text style={[styles.channelLabel, { color: colors.text }]} numberOfLines={1}>{item.label}</Text>
                   <Text style={[styles.channelMeta, { color: colors.textMuted }]} numberOfLines={1}>{item.description}</Text>
