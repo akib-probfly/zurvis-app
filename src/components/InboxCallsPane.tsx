@@ -1,5 +1,5 @@
 import { useInfiniteQuery, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Clock3, Search } from 'lucide-react-native';
+import { Clock3, Phone, PhoneIncoming, PhoneMissed, PhoneOutgoing, Search, type LucideIcon } from 'lucide-react-native';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, RefreshControl, StyleSheet, Text, TextInput, View } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
@@ -8,14 +8,15 @@ import { ErrorState } from './ErrorState';
 import { CallFeedItem } from './CallFeedItem';
 import { ListSkeleton } from './Skeleton';
 import { useTheme } from '../theme/ThemeContext';
+import { fontSize, fontWeight, radius, spacing } from '../theme/tokens';
 
 export type CallFeedFilter = 'all' | 'missed' | 'incoming' | 'outgoing';
 
-const CALL_FILTERS: Array<{ id: CallFeedFilter; label: string }> = [
-  { id: 'all', label: 'All' },
-  { id: 'missed', label: 'Missed' },
-  { id: 'incoming', label: 'Incoming' },
-  { id: 'outgoing', label: 'Outgoing' },
+const CALL_FILTERS: Array<{ id: CallFeedFilter; label: string; icon: LucideIcon }> = [
+  { id: 'all', label: 'All', icon: Phone },
+  { id: 'missed', label: 'Missed', icon: PhoneMissed },
+  { id: 'incoming', label: 'Incoming', icon: PhoneIncoming },
+  { id: 'outgoing', label: 'Outgoing', icon: PhoneOutgoing },
 ];
 
 type Props = {
@@ -23,7 +24,7 @@ type Props = {
 };
 
 export function InboxCallsPane({ onOpenConversation }: Props) {
-  const { colors, isDark } = useTheme();
+  const { colors } = useTheme();
   const queryClient = useQueryClient();
   const [callFilter, setCallFilter] = useState<CallFeedFilter>('all');
   const [search, setSearch] = useState('');
@@ -110,20 +111,28 @@ export function InboxCallsPane({ onOpenConversation }: Props) {
         ) : null}
       </View>
 
-      <View style={[styles.filters, { borderBottomColor: colors.separator }]}>
+      <View style={styles.filters}>
         {CALL_FILTERS.map((filter) => {
           const active = callFilter === filter.id;
           const count = summary ? summary[filter.id] : null;
+          const Icon = filter.icon;
+          const foreground = active ? colors.primaryText : colors.textSecondary;
           return (
             <Pressable
               key={filter.id}
-              style={[styles.filterChip, active && styles.filterChipActive, active && isDark && { backgroundColor: colors.primary }]}
+              style={({ pressed }) => [styles.filterChip, {
+                backgroundColor: active ? colors.primary : colors.surface,
+                borderColor: active ? colors.primary : colors.cardBorder,
+                opacity: pressed ? 0.75 : 1,
+              }]}
               onPress={() => setCallFilter(filter.id)}
+              accessibilityRole="button"
+              accessibilityState={{ selected: active }}
+              accessibilityLabel={`${filter.label} calls${count !== null ? `, ${count}` : ''}`}
             >
-              <Text style={[styles.filterChipText, active && styles.filterChipTextActive, active && isDark && { color: colors.primaryText }]}>{filter.label}</Text>
-              {count !== null ? (
-                <Text style={[styles.filterCount, active && styles.filterCountActive, active && isDark && { backgroundColor: colors.primary, color: colors.primaryText }, !active && { backgroundColor: colors.surfaceSecondary, color: colors.textSecondary }]}>{count}</Text>
-              ) : null}
+              <Icon color={foreground} size={12} />
+              <Text numberOfLines={1} adjustsFontSizeToFit style={[styles.filterChipText, { color: foreground }]}>{filter.label}</Text>
+              {count !== null ? <Text numberOfLines={1} adjustsFontSizeToFit style={[styles.filterCount, { color: foreground }]}>{count}</Text> : null}
             </Pressable>
           );
         })}
@@ -186,13 +195,10 @@ const styles = StyleSheet.create({
   search: { alignItems: 'center', backgroundColor: '#fff', borderColor: '#e2e8f0', borderRadius: 25, borderWidth: 1, flexDirection: 'row', margin: 12, paddingHorizontal: 14 },
   input: { color: '#17233a', flex: 1, height: 42, marginLeft: 8 },
   clearSearch: { color: '#94a3b8', fontSize: 14, padding: 4 },
-  filters: { borderBottomColor: '#e2e8f0', borderBottomWidth: 1, flexDirection: 'row', flexWrap: 'wrap', gap: 6, paddingBottom: 10, paddingHorizontal: 12 },
-  filterChip: { alignItems: 'center', borderRadius: 999, flexDirection: 'row', gap: 4, paddingHorizontal: 10, paddingVertical: 6 },
-  filterChipActive: { backgroundColor: '#dbeafe' },
-  filterChipText: { color: '#64748b', fontSize: 12, fontWeight: '600' },
-  filterChipTextActive: { color: '#2563eb' },
-  filterCount: { backgroundColor: '#e2e8f0', borderRadius: 999, color: '#64748b', fontSize: 10, fontWeight: '700', minWidth: 18, overflow: 'hidden', paddingHorizontal: 5, paddingVertical: 1, textAlign: 'center' },
-  filterCountActive: { backgroundColor: '#bfdbfe', color: '#1d4ed8' },
+  filters: { flexDirection: 'row', gap: spacing.xs, paddingBottom: spacing.sm, paddingHorizontal: spacing.md },
+  filterChip: { alignItems: 'center', borderRadius: radius.pill, borderWidth: 1, flexGrow: 1, flexShrink: 1, minWidth: 0, justifyContent: 'center', flexDirection: 'row', gap: spacing.xxs, paddingHorizontal: spacing.xs, paddingVertical: spacing.xs },
+  filterChipText: { flexShrink: 1, fontSize: fontSize.small, fontWeight: fontWeight.semibold },
+  filterCount: { flexShrink: 1, fontSize: fontSize.tiny, fontWeight: fontWeight.medium, opacity: 0.8 },
   list: { paddingBottom: 16 },
   listFill: { flex: 1 },
   empty: { alignItems: 'center', paddingHorizontal: 24, paddingTop: 60 },
