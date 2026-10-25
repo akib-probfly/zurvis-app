@@ -168,6 +168,7 @@ function StandardMessageBubble({ message, outgoing, attachments, replyPreview, r
     () => getMessageReferralPreview(message, channelName),
     [message, channelName],
   );
+  const [referralImageWidth, setReferralImageWidth] = useState(250);
   const postchatForm = readWebchatPostchatForm(message.metadata);
   const whatsappLocation = useMemo(() => getWhatsappLocation(message), [message]);
   const whatsappContacts = useMemo(() => getWhatsappContacts(message), [message]);
@@ -281,6 +282,18 @@ function StandardMessageBubble({ message, outgoing, attachments, replyPreview, r
 
   const hasReactions = Boolean(reactions?.length);
   const reactionItems: Array<{ emoji: string; count: number }> = hasReactions ? reactions : [];
+  const singleImage = imageAttachments.length === 1 ? (
+    <AuthenticatedImage
+      url={previewUrl(imageAttachments[0])}
+      style={[styles.image, { backgroundColor: colors.surfaceSecondary }]}
+      onPress={() => onImage?.(imageAttachments[0].id)}
+      fitContent
+      maxWidth={referralPreview ? referralImageWidth : 250}
+      // Ad cards set the bubble width. Keep portrait media at that same width
+      // without cropping screenshots or leaving a strip beside the image.
+      maxHeight={referralPreview ? Number.MAX_SAFE_INTEGER : 340}
+    />
+  ) : null;
 
   return (
     <View style={[styles.wrap, outgoing && styles.wrapOutgoing, canCreateOrderFromMessage && styles.wrapWithCreateOrder, hasReactions && styles.wrapWithReactions]}>
@@ -438,14 +451,17 @@ function StandardMessageBubble({ message, outgoing, attachments, replyPreview, r
             ))}
           </View>
         ) : imageAttachments.length === 1 ? (
-          <AuthenticatedImage
-            url={previewUrl(imageAttachments[0])}
-            style={[styles.image, { backgroundColor: colors.surfaceSecondary }]}
-            onPress={() => onImage?.(imageAttachments[0].id)}
-            fitContent
-            maxWidth={250}
-            maxHeight={340}
-          />
+          referralPreview ? (
+            <View
+              style={styles.referralImageWrap}
+              onLayout={({ nativeEvent }) => {
+                const width = Math.floor(nativeEvent.layout.width);
+                if (width > 0) setReferralImageWidth(width);
+              }}
+            >
+              {singleImage}
+            </View>
+          ) : singleImage
         ) : null}
         {videoAttachments.map((attachment: any) => (
           <VideoThumb
@@ -911,6 +927,7 @@ const styles = StyleSheet.create({
   broadcastBadgeText: { color: '#fff', fontSize: 10, fontWeight: '700', letterSpacing: 0.8, textTransform: 'uppercase' },
   referralWrap: { width: '100%' },
   referralWrapWithBody: { marginBottom: 10 },
+  referralImageWrap: { width: '100%', marginTop: 8 },
   outgoingMuted: { color: '#dbeafe' },
   quoted: { alignSelf: 'stretch', backgroundColor: '#ffffff22', borderColor: '#ffffff55', borderRadius: 12, borderWidth: 1, marginBottom: 8, maxWidth: '100%', paddingHorizontal: 10, paddingVertical: 7 },
   quotedPressed: { opacity: 0.6 },
