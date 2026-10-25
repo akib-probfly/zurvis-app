@@ -8,6 +8,7 @@ import {
   type ChannelTypeGroup,
 } from '../lib/channel-filter-groups';
 import { useTheme } from '../theme/ThemeContext';
+import { borderWidth, controlSize, fontSize, fontWeight, letterSpacing, radius, spacing } from '../theme/tokens';
 
 type Props = {
   groups: ChannelTypeGroup[];
@@ -168,33 +169,33 @@ export function ChannelTypeFilterList({
 }
 
 const styles = StyleSheet.create({
-  hint: { fontSize: 11, marginBottom: 6 },
+  hint: { fontSize: fontSize.small, marginBottom: spacing.xs + spacing.xxs },
   search: {
     alignItems: 'center',
-    borderRadius: 12,
-    borderWidth: 1,
+    borderRadius: radius.md,
+    borderWidth: borderWidth.thin,
     flexDirection: 'row',
-    marginBottom: 8,
-    paddingHorizontal: 10,
+    marginBottom: spacing.sm,
+    paddingHorizontal: spacing.sm + spacing.xxs,
   },
-  searchInput: { flex: 1, height: 40, marginLeft: 8 },
-  selectedRow: { alignItems: 'center', flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 },
-  selectedCount: { fontSize: 12 },
-  clear: { fontSize: 12, fontWeight: '700' },
-  group: { borderRadius: 12, borderWidth: 1, marginBottom: 6, overflow: 'hidden' },
-  header: { alignItems: 'center', flexDirection: 'row', gap: 2, paddingHorizontal: 4, paddingVertical: 2 },
-  main: { alignItems: 'center', borderRadius: 10, flex: 1, flexDirection: 'row', gap: 8, minWidth: 0, paddingHorizontal: 4, paddingVertical: 4 },
-  groupName: { flexShrink: 1, fontSize: 13, fontWeight: '700' },
-  countBadge: { borderRadius: 999, minWidth: 20, paddingHorizontal: 5, paddingVertical: 1 },
-  countBadgeText: { fontSize: 11, fontWeight: '700', textAlign: 'center' },
-  check: { alignItems: 'center', borderRadius: 999, borderWidth: 1, height: 18, justifyContent: 'center', width: 18 },
+  searchInput: { flex: 1, height: controlSize.icon, marginLeft: spacing.sm },
+  selectedRow: { alignItems: 'center', flexDirection: 'row', justifyContent: 'space-between', marginBottom: spacing.sm },
+  selectedCount: { fontSize: fontSize.small },
+  clear: { fontSize: fontSize.small, fontWeight: fontWeight.bold },
+  group: { borderRadius: radius.md, borderWidth: borderWidth.thin, marginBottom: spacing.xs + spacing.xxs, overflow: 'hidden' },
+  header: { alignItems: 'center', flexDirection: 'row', gap: spacing.xxs, paddingHorizontal: spacing.xs, paddingVertical: spacing.xxs },
+  main: { alignItems: 'center', borderRadius: radius.md, flex: 1, flexDirection: 'row', gap: spacing.sm, minWidth: 0, paddingHorizontal: spacing.xs, paddingVertical: spacing.xs },
+  groupName: { flexShrink: 1, fontSize: fontSize.caption, fontWeight: fontWeight.bold },
+  countBadge: { borderRadius: radius.pill, minWidth: 20, paddingHorizontal: spacing.xs, paddingVertical: spacing.xxs },
+  countBadgeText: { fontSize: fontSize.small, fontWeight: fontWeight.bold, textAlign: 'center' },
+  check: { alignItems: 'center', borderRadius: radius.pill, borderWidth: borderWidth.thin, height: 18, justifyContent: 'center', width: 18 },
   chevron: { alignItems: 'center', height: 28, justifyContent: 'center', width: 28 },
-  body: { borderTopWidth: 1, gap: 6, paddingBottom: 6, paddingHorizontal: 6, paddingTop: 6 },
-  bodyHeader: { alignItems: 'center', flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 2 },
-  bodyLabel: { fontSize: 10, fontWeight: '700', letterSpacing: 0.6, textTransform: 'uppercase' },
-  selectAll: { fontSize: 11, fontWeight: '700' },
-  childRow: { alignItems: 'center', borderRadius: 10, borderWidth: 1, flexDirection: 'row', gap: 8, paddingHorizontal: 8, paddingVertical: 6 },
-  childName: { fontSize: 13, fontWeight: '700' },
-  childMeta: { fontSize: 11, marginTop: 1 },
-  empty: { fontSize: 13, paddingVertical: 12 },
+  body: { borderTopWidth: borderWidth.thin, gap: spacing.xs + spacing.xxs, padding: spacing.xs + spacing.xxs },
+  bodyHeader: { alignItems: 'center', flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: spacing.xxs },
+  bodyLabel: { fontSize: fontSize.tiny, fontWeight: fontWeight.bold, letterSpacing: letterSpacing.overline, textTransform: 'uppercase' },
+  selectAll: { fontSize: fontSize.small, fontWeight: fontWeight.bold },
+  childRow: { alignItems: 'center', borderRadius: radius.md, borderWidth: borderWidth.thin, flexDirection: 'row', gap: spacing.sm, paddingHorizontal: spacing.sm, paddingVertical: spacing.xs + spacing.xxs },
+  childName: { fontSize: fontSize.caption, fontWeight: fontWeight.bold },
+  childMeta: { fontSize: fontSize.small, marginTop: spacing.xxs },
+  empty: { fontSize: fontSize.caption, paddingVertical: spacing.md },
 });
