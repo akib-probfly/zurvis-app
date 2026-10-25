@@ -346,7 +346,7 @@ function StandardMessageBubble({ message, outgoing, attachments, replyPreview, r
           </View>
         ) : null}
         {referralPreview ? (
-          <View style={[styles.referralWrap, showBody && styles.referralWrapWithBody]}>
+          <View style={[styles.referralWrap, (showBody || voiceAttachments.length > 0) && styles.referralWrapWithContent]}>
             <MessageReferralPreviewCard referral={referralPreview} />
           </View>
         ) : null}
@@ -926,7 +926,7 @@ const styles = StyleSheet.create({
   broadcastBadge: { alignItems: 'center', alignSelf: 'flex-start', backgroundColor: '#315efb', borderRadius: 6, flexDirection: 'row', gap: 4, marginBottom: 6, paddingHorizontal: 6, paddingVertical: 3 },
   broadcastBadgeText: { color: '#fff', fontSize: 10, fontWeight: '700', letterSpacing: 0.8, textTransform: 'uppercase' },
   referralWrap: { width: '100%' },
-  referralWrapWithBody: { marginBottom: 10 },
+  referralWrapWithContent: { marginBottom: 10 },
   referralImageWrap: { width: '100%', marginTop: 8 },
   outgoingMuted: { color: '#dbeafe' },
   quoted: { alignSelf: 'stretch', backgroundColor: '#ffffff22', borderColor: '#ffffff55', borderRadius: 12, borderWidth: 1, marginBottom: 8, maxWidth: '100%', paddingHorizontal: 10, paddingVertical: 7 },
