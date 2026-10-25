@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Check, ChevronRight, Layers3, PackageOpen, Search, Settings2, ShoppingBag, Store, Trash2, Truck } from 'lucide-react-native';
+import { Bot, Check, ChevronRight, Layers3, PackageOpen, Search, Settings2, ShoppingBag, Store, Trash2, Truck } from 'lucide-react-native';
 import type { LucideIcon } from 'lucide-react-native';
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useNavigation, type NavigationProp } from '@react-navigation/native';
@@ -11,7 +11,7 @@ import type { SettingsStackParamList } from '../navigation/SettingsStack';
 import { useWorkspaceAccess } from '../lib/workspace-access';
 import { useTheme } from '../theme/ThemeContext';
 import { fontSize, fontWeight, radius, spacing } from '../theme/tokens';
-import { AppButton, AppCard, AppText, ScreenHeader } from '../ui';
+import { AppButton, AppCard, AppListRow, AppText, ScreenHeader } from '../ui';
 
 const CATALOG_TOTAL = 4;
 
@@ -64,6 +64,7 @@ export function IntegrationsScreen() {
         right={<AppButton icon={Search} label="Browse Catalog" onPress={browseCatalog} />}
       />
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        <AppCard padding="none"><AppListRow icon={Bot} title="AI Agents" description="Create and manage AI agents" last onPress={() => navigation.navigate('AiAgents')} /></AppCard>
         <View style={styles.statsGrid}>
           <StatCard label="Connected" value={String(connectedCount)} icon={Layers3} color={colors.primary} soft={colors.primarySoft} />
           <StatCard label="Available" value={String(CATALOG_TOTAL)} icon={PackageOpen} color={colors.success} soft={colors.successSoft} />

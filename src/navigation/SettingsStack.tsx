@@ -20,6 +20,9 @@ import { ProductFormScreen } from '../screens/ProductFormScreen';
 import { OrdersScreen } from '../screens/OrdersScreen';
 import { IntegrationCatalogScreen } from '../screens/IntegrationCatalogScreen';
 import { IntegrationsScreen } from '../screens/IntegrationsScreen';
+import { AiAgentsScreen } from '../screens/AiAgentsScreen';
+import { AiAgentFormScreen } from '../screens/AiAgentFormScreen';
+import type { AiAgentType } from '../api/ai-agents';
 import { CourierConnectionDetailsScreen } from '../screens/CourierConnectionDetailsScreen';
 import { CreateOrderScreen } from '../screens/CreateOrderScreen';
 import type { CreateOrderRouteParams } from './CreateOrderRouteParams';
@@ -60,6 +63,8 @@ export type SettingsStackParamList = {
   CreateOrder: CreateOrderRouteParams;
   IntegrationCatalog: undefined;
   Integrations: undefined;
+  AiAgents: undefined;
+  AiAgentForm: { agentId?: string; templateType?: AiAgentType };
   CourierConnectionDetails: { connectionId: string };
   CourierConnectionConfigure: { connectionId: string };
   ProductForm: { productId?: string } | undefined;
@@ -91,6 +96,8 @@ export function SettingsStack() {
       <Stack.Screen name="CreateOrder" component={CreateOrderScreen} />
       <Stack.Screen name="IntegrationCatalog" component={IntegrationCatalogScreen} />
       <Stack.Screen name="Integrations" component={IntegrationsScreen} />
+      <Stack.Screen name="AiAgents" component={AiAgentsScreen} />
+      <Stack.Screen name="AiAgentForm" component={AiAgentFormScreen} />
       <Stack.Screen name="CourierConnectionDetails" component={CourierConnectionDetailsScreen} />
       <Stack.Screen name="CourierConnectionConfigure" component={CourierConnectionDetailsScreen} />
       <Stack.Screen name="ProductForm" component={ProductFormScreen} />

@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Image } from 'expo-image';
 import {
   Bell,
+  Bot,
   Building2,
   ChevronRight,
   CreditCard,
@@ -45,7 +46,7 @@ import { AppCard, AppText, SettingsGridItem, SettingsSection } from '../ui';
 
 type BillingTab = 'current' | 'packages' | 'invoices' | 'history';
 
-type GeneralRoute = 'Profile' | 'Workspace' | 'Members' | 'Notifications' | 'InboxAppearance' | 'QuickReplies' | 'Tags' | 'AssignmentPolicy' | 'Broadcast' | 'BroadcastCreate' | 'Products' | 'Orders' | 'Integrations' | 'IntegrationCatalog' | '__appearance__';
+type GeneralRoute = 'Profile' | 'Workspace' | 'Members' | 'Notifications' | 'InboxAppearance' | 'QuickReplies' | 'Tags' | 'AssignmentPolicy' | 'Broadcast' | 'BroadcastCreate' | 'Products' | 'Orders' | 'Integrations' | 'IntegrationCatalog' | 'AiAgents' | '__appearance__';
 
 type SettingsRow =
   | { kind: 'route'; id: string; label: string; description: string; icon: LucideIcon; iconBg: string; iconColor: string; route: GeneralRoute; badge?: string }
@@ -78,9 +79,10 @@ const SETTINGS_GROUPS: SettingsGroup[] = [
     ],
   },
   {
-    label: 'Integrations',
+    label: 'Connectors',
     items: [
-      { kind: 'route', id: 'integration-catalog', label: 'Connectors', description: 'Connect a store or delivery partner', icon: Puzzle, iconBg: iconTiles.indigo.bg, iconColor: iconTiles.indigo.fg, route: 'Integrations' },
+      { kind: 'route', id: 'integration-catalog', label: 'Integrations', description: 'Connect a store or delivery partner', icon: Puzzle, iconBg: iconTiles.indigo.bg, iconColor: iconTiles.indigo.fg, route: 'Integrations' },
+      { kind: 'route', id: 'ai-agents', label: 'AI Agents', description: 'Create and manage AI agents', icon: Bot, iconBg: iconTiles.blue.bg, iconColor: iconTiles.blue.fg, route: 'AiAgents' },
     ],
   },
   {
