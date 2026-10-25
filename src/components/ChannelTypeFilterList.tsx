@@ -1,4 +1,4 @@
-import { Check, ChevronDown, Minus, Search } from 'lucide-react-native';
+import { Check, ChevronDown, ChevronUp, Minus, Search } from 'lucide-react-native';
 import { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { ChannelLogo } from './ChannelLogo';
@@ -107,8 +107,15 @@ export function ChannelTypeFilterList({
               >
                 {allSelected ? <Check color={colors.primary} size={12} /> : someSelected ? <Minus color={colors.primary} size={12} /> : null}
               </Pressable>
-              <Pressable style={styles.chevron} onPress={() => toggleExpanded(typeGroup.typeKey)} hitSlop={8}>
-                <ChevronDown color={colors.textMuted} size={18} style={expanded ? { transform: [{ rotate: '180deg' }] } : undefined} />
+              <Pressable
+                style={styles.chevron}
+                onPress={() => toggleExpanded(typeGroup.typeKey)}
+                hitSlop={8}
+                accessibilityRole="button"
+                accessibilityLabel={`${expanded ? 'Collapse' : 'Expand'} ${typeGroup.typeName} channels`}
+                accessibilityState={{ expanded }}
+              >
+                {expanded ? <ChevronUp color={colors.textMuted} size={18} /> : <ChevronDown color={colors.textMuted} size={18} />}
               </Pressable>
             </View>
 
