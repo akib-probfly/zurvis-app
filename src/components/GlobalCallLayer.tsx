@@ -157,6 +157,22 @@ export function GlobalCallLayer() {
     }),
   });
 
+  const peerCallIdentity = callController.peerCallIdentity;
+  const peerCallQuery = useQuery({
+    queryKey: ['call-session-state', peerCallIdentity?.conversationId, peerCallIdentity?.callSessionId],
+    queryFn: () => fetchConversationCallSession(peerCallIdentity!),
+    enabled: hasWorkspaceContext && Boolean(peerCallIdentity) && !callController.isBusy,
+    retry: false,
+    refetchInterval: appState === 'active' ? 5000 : false,
+  });
+  useEffect(() => {
+    if (!peerCallIdentity) return;
+    const unavailable = peerCallQuery.error instanceof ApiError && [403, 404].includes(peerCallQuery.error.status);
+    if (unavailable || peerCallQuery.data?.endedAt || (peerCallQuery.data && isCallSessionTerminal(peerCallQuery.data.status))) {
+      resetPeerContext();
+    }
+  }, [peerCallIdentity, peerCallQuery.data, peerCallQuery.error, resetPeerContext]);
+
   const [incomingCallPrompt, setIncomingCallPrompt] = useState<IncomingCallPrompt | null>(() => readIncomingCallPrompt());
   const dismissedPromptSessionIdsRef = useRef(new Set<string>());
   const { incomingCallAlertsEnabled, isLoaded: areNotificationPrefsLoaded } = useNotificationPreferences();

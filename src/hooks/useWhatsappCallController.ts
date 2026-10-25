@@ -13,6 +13,7 @@ import {
   createWhatsappCallAnswer,
   createWhatsappCallOffer,
   createWhatsappCallPeerContext,
+  disposeWhatsappCallPeerContext,
   extractWhatsappCallSignal,
   isWhatsappCallSupported,
   type WhatsappCallPeerContext,
@@ -48,6 +49,8 @@ export function useWhatsappCallController() {
     onError: (error, params) => reconcileCallActionError(queryClient, error, params),
   });
   const peerContextRef = useRef<WhatsappCallPeerContext | null>(null);
+  const peerGenerationRef = useRef(0);
+  const [peerCallIdentity, setPeerCallIdentity] = useState<{ conversationId: string; callSessionId: string } | null>(null);
   const appliedRemoteSignalRef = useRef<string | null>(null);
   const [remoteStream, setRemoteStream] = useState<any | null>(null);
   const [connectionState, setConnectionState] = useState<CallConnectionState>('idle');
@@ -113,9 +116,14 @@ export function useWhatsappCallController() {
   }, []);
 
   const resetPeerContext = useCallback((options?: { restoreAudio?: boolean }) => {
-    peerContextRef.current?.peerConnection.close();
-    peerContextRef.current?.localStream.getTracks().forEach((track: any) => track.stop());
+    peerGenerationRef.current++;
+    const context = peerContextRef.current;
     peerContextRef.current = null;
+    if (context) {
+      try { disposeWhatsappCallPeerContext(context); }
+      catch (error) { console.warn('[call-audio] Peer cleanup failed', error); }
+    }
+    setPeerCallIdentity(null);
     appliedRemoteSignalRef.current = null;
     setRemoteStream(null);
     setIsMuted(false);
@@ -200,7 +208,12 @@ export function useWhatsappCallController() {
       throw new Error('Voice calling requires a custom Expo build with WebRTC.');
     }
     resetPeerContext({ restoreAudio: false });
+    const generation = peerGenerationRef.current;
     const peerContext = await createWhatsappCallPeerContext();
+    if (generation !== peerGenerationRef.current) {
+      disposeWhatsappCallPeerContext(peerContext);
+      throw new Error('Call setup was cancelled.');
+    }
     attachPeerListeners(peerContext.peerConnection);
     peerContextRef.current = peerContext;
     setIsMuted(false);
@@ -236,6 +249,7 @@ export function useWhatsappCallController() {
         note: params.note ?? null,
         session: offer,
       });
+      setPeerCallIdentity({ conversationId: params.conversationId, callSessionId: session.id });
 
       const remoteSignal = extractWhatsappCallSignal(session.metadata);
       if (remoteSignal?.sdpType === 'answer') {
@@ -284,6 +298,7 @@ export function useWhatsappCallController() {
     setConnectionState('preparing');
     try {
       const peerContext = await initializePeerContext();
+      setPeerCallIdentity({ conversationId: params.conversationId, callSessionId: params.callSessionId });
       const answer = await createWhatsappCallAnswer(peerContext.peerConnection, params.remoteOffer);
       setConnectionState('connecting');
       const session = await answerCallMutation.mutateAsync({
@@ -328,9 +343,10 @@ export function useWhatsappCallController() {
   const endCall = useCallback(async (params: { conversationId: string; callSessionId: string }) => {
     if (!beginAction()) return;
     clearError();
+    // Local privacy must not depend on preflight, network, or cache reconciliation.
+    resetPeerContext();
     try {
       const session = await endCallMutation.mutateAsync(params);
-      resetPeerContext();
       return session;
     } catch (error) {
       setConnectionState('failed');
@@ -347,6 +363,7 @@ export function useWhatsappCallController() {
   }, [resetPeerContext]);
 
   return {
+    peerCallIdentity,
     connectionState,
     errorMessage,
     isMuted,

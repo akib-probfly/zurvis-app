@@ -14,6 +14,26 @@ export type WhatsappCallPeerContext = {
   localStream: any;
 };
 
+export function disposeWhatsappCallPeerContext(context: WhatsappCallPeerContext) {
+  const { peerConnection, localStream } = context;
+  peerConnection.ontrack = null;
+  peerConnection.onaddstream = null;
+  peerConnection.onconnectionstatechange = null;
+  peerConnection.oniceconnectionstatechange = null;
+  try {
+    peerConnection.close();
+  } finally {
+    try {
+      localStream.getTracks().forEach((track: any) => {
+        try { track.stop(); } catch { /* Continue releasing the remaining tracks. */ }
+      });
+    } finally {
+      // react-native-webrtc stop() disables tracks; release() disposes native capture.
+      localStream.release?.();
+    }
+  }
+}
+
 export function isWhatsappCallSupported() {
   return Boolean(NativeModules.WebRTCModule)
     && typeof mediaDevices?.getUserMedia === 'function'
@@ -71,13 +91,17 @@ export async function createWhatsappCallPeerContext(): Promise<WhatsappCallPeerC
     await reapplyCallAudio().catch((error) => console.warn('[call-audio] Post-capture activation failed', error));
     scheduleCallAudioReapply();
   }
-  const peerConnection = new RTCPeerConnection({ iceServers: [] });
-
-  localStream.getAudioTracks().forEach((track: any) => {
-    peerConnection.addTrack(track, localStream);
-  });
-
-  return { peerConnection, localStream };
+  let peerConnection: any;
+  try {
+    peerConnection = new RTCPeerConnection({ iceServers: [] });
+    localStream.getAudioTracks().forEach((track: any) => {
+      peerConnection.addTrack(track, localStream);
+    });
+    return { peerConnection, localStream };
+  } catch (error) {
+    disposeWhatsappCallPeerContext({ peerConnection: peerConnection ?? { close() {} }, localStream });
+    throw error;
+  }
 }
 
 export async function waitForIceGatheringComplete(peerConnection: any) {

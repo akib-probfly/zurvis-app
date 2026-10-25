@@ -58,6 +58,20 @@ function isRoutedToUser(payload: CallSessionUpdatedEvent, userId: string | undef
 export function upsertActiveCallSessionCache(queryClient: QueryClient, payload: CallSessionUpdatedEvent) {
   const scope = callScopeFromAccessToken();
   if (!scope || payload.workspaceId !== scope.workspaceId) return;
+  // Keep the locally owned call observable even after it leaves the active list.
+  queryClient.setQueryData<ConversationCallSession>(
+    ['call-session-state', payload.conversationId, payload.callSessionId],
+    (current) => current ? {
+      ...current,
+      status: payload.status as ConversationCallSession['status'],
+      endedAt: payload.endedAt ?? current.endedAt,
+      updatedAt: payload.updatedAt ?? current.updatedAt,
+    } : undefined,
+  );
+  void queryClient.invalidateQueries({
+    queryKey: ['call-session-state', payload.conversationId, payload.callSessionId],
+    refetchType: 'active',
+  });
   const userId = scope.userId || currentUserId(queryClient);
   const isActiveStatus = ACTIVE_STATUSES.has(payload.status);
   const isClaimedByOther = Boolean(userId && payload.claimedByUserId && payload.claimedByUserId !== userId);
