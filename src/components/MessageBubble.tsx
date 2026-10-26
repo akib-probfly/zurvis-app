@@ -208,9 +208,12 @@ function StandardMessageBubble({ message, outgoing, attachments, replyPreview, r
   const expanded = expandedBodyKey === bodyKey;
   // Native line measurements can be missing or delayed in recycled list cells.
   // Clearly long bodies must still start collapsed and expose the toggle.
-  const canExpand = overflowBodyKey === bodyKey
+  // Android's decorated spans can crash when numberOfLines clips their range.
+  // Keep phone links underlined by rendering their entire message body.
+  const hasAndroidPhoneLink = Platform.OS === 'android' && bodyParts.some((part) => part.href?.startsWith('tel:'));
+  const canExpand = !hasAndroidPhoneLink && (overflowBodyKey === bodyKey
     || body.length > 400
-    || body.split('\n').length > COLLAPSED_LINE_COUNT;
+    || body.split('\n').length > COLLAPSED_LINE_COUNT);
   const [openingDocumentId, setOpeningDocumentId] = useState<string | null>(null);
 
   function renderBody() {
@@ -225,11 +228,11 @@ function StandardMessageBubble({ message, outgoing, attachments, replyPreview, r
           style={outgoing ? styles.outgoingText : [styles.messageText, { color: colors.text }]}
           numberOfLines={clamp ? COLLAPSED_LINE_COUNT : undefined}
           onTextLayout={(e) => {
-            if (!canExpand && e.nativeEvent.lines.length > COLLAPSED_LINE_COUNT) setOverflowBodyKey(bodyKey);
+            if (!hasAndroidPhoneLink && !canExpand && e.nativeEvent.lines.length > COLLAPSED_LINE_COUNT) setOverflowBodyKey(bodyKey);
           }}
         >
           {bodyParts.map((part, index) => part.type === 'url' ? (
-            <Text key={index} style={[styles.link, outgoing && styles.outgoingLink, !outgoing && { color: colors.primary }]} onPress={() => openLink(part.href)}>{part.value}</Text>
+            <Text key={index} style={[styles.link, outgoing && styles.outgoingLink, !outgoing && { color: colors.primary }, part.href?.startsWith('tel:') && styles.phoneLink]} onPress={() => openLink(part.href)}>{part.value}</Text>
           ) : (
             <Text key={index}>{part.value}</Text>
           ))}
@@ -420,7 +423,7 @@ function StandardMessageBubble({ message, outgoing, attachments, replyPreview, r
               <View style={styles.templateBodyWrap}>
                 <Text selectable style={[styles.templateBodyText, { color: colors.text }]}>
                   {templateBodyParts.map((part, index) => part.type === 'url' ? (
-                    <Text key={index} style={[styles.link, { color: colors.primary }]} onPress={() => openLink(part.href)}>{part.value}</Text>
+                    <Text key={index} style={[styles.link, { color: colors.primary }, part.href?.startsWith('tel:') && styles.phoneLink]} onPress={() => openLink(part.href)}>{part.value}</Text>
                   ) : (
                     <Text key={index}>{part.value}</Text>
                   ))}
@@ -931,6 +934,7 @@ const styles = StyleSheet.create({
   // Keep links colored and tappable without invoking that native drawing path.
   link: { color: '#2563eb', textDecorationLine: Platform.OS === 'android' ? 'none' : 'underline' },
   outgoingLink: { color: '#eaf1ff' },
+  phoneLink: { textDecorationLine: 'underline' },
   readMore: { color: '#2563eb', fontSize: 12, fontWeight: '600' },
   readMoreRow: { alignItems: 'center', flexDirection: 'row', gap: 3, marginTop: 4 },
   broadcastBadge: { alignItems: 'center', alignSelf: 'flex-start', backgroundColor: '#315efb', borderRadius: 6, flexDirection: 'row', gap: 4, marginBottom: 6, paddingHorizontal: 6, paddingVertical: 3 },

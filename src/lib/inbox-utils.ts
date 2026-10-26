@@ -161,6 +161,24 @@ export function parseMessageTextParts(text: string): MessageTextPart[] {
     });
   }
 
+  // Keep phone links out of URLs/emails and avoid matching inside identifiers.
+  const phonePattern = /(?<![\p{L}\p{N}_+])\+?(?:\(\d{1,4}\)|\d)[\d ()-]*\d(?![\p{L}\p{N}_])/gu;
+  for (const phoneMatch of text.matchAll(phonePattern)) {
+    const value = phoneMatch[0];
+    const start = phoneMatch.index ?? 0;
+    const end = start + value.length;
+    const digits = value.replace(/\D/g, '');
+    // Bangladesh mobile numbers: local 01[3-9] or international +880/880.
+    if (!/^(?:01[3-9]\d{8}|8801[3-9]\d{8})$/.test(digits)) continue;
+    if (value.startsWith('+') && !digits.startsWith('880')) continue;
+    if (markers.some((marker) => start < marker.end && end > marker.start)) continue;
+    markers.push({
+      start,
+      end,
+      part: { type: 'url', value, href: `tel:${digits.startsWith('880') ? '+' : ''}${digits}` },
+    });
+  }
+
   markers.sort((a, b) => a.start - b.start);
   const parts: MessageTextPart[] = [];
   let lastIndex = 0;
