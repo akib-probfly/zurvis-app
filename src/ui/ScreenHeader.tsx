@@ -1,3 +1,4 @@
+import { borderWidth, fontSize, fontWeight, spacing } from '../theme/tokens';
 import { ArrowLeft } from 'lucide-react-native';
 import type { ReactNode } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
@@ -23,7 +24,7 @@ export function ScreenHeader({ title, subtitle, onBack, right, titleNumberOfLine
     <View
       style={[
         styles.header,
-        { paddingTop: insets.top + 10, backgroundColor: colors.surface, borderBottomColor: colors.cardBorder },
+        { paddingTop: insets.top + spacing.control, backgroundColor: colors.surface, borderBottomColor: colors.cardBorder },
       ]}
     >
       {onBack ? (
@@ -43,14 +44,14 @@ export function ScreenHeader({ title, subtitle, onBack, right, titleNumberOfLine
 const styles = StyleSheet.create({
   header: {
     alignItems: 'center',
-    borderBottomWidth: 1,
+    borderBottomWidth: borderWidth.thin,
     flexDirection: 'row',
-    gap: 10,
-    paddingBottom: 12,
-    paddingHorizontal: 14,
+    gap: spacing.control,
+    paddingBottom: spacing.md,
+    paddingHorizontal: spacing.inset,
   },
   backButton: { alignItems: 'center', height: 36, justifyContent: 'center', width: 36 },
   copy: { flex: 1, minWidth: 0 },
-  title: { fontSize: 18, fontWeight: '800' },
-  subtitle: { fontSize: 12, marginTop: 2 },
+  title: { fontSize: fontSize.heading, fontWeight: fontWeight.extrabold },
+  subtitle: { fontSize: fontSize.small, marginTop: spacing.xxs },
 });

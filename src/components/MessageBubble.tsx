@@ -1,3 +1,5 @@
+import { createThemedStyles } from '../theme/createThemedStyles';
+import { borderWidth, fontSize, fontWeight, letterSpacing, lineHeight, radius, spacing } from '../theme/tokens';
 import * as Clipboard from 'expo-clipboard';
 import { Check, CheckCheck, FileText, ExternalLink, ChevronDown, ChevronUp, Megaphone, Sparkles, Image as ImageIcon, Video, Mic, MapPin, ContactRound, Copy, Phone, Mail, Building2, PackagePlus } from 'lucide-react-native';
 import { useState, useMemo } from 'react';
@@ -86,6 +88,7 @@ function getContactClipboardText(contact: WhatsappContactCard) {
 
 function SystemMessageBubble({ message }: { message: any }) {
   const { colors, isDark } = useTheme();
+  const styles = createStyles(colors);
   const missed = isMissedCall(message);
   const timestamp = message.sentAt ?? message.createdAt;
 
@@ -112,6 +115,7 @@ export function MessageBubble(props: any) {
 
 function StandardMessageBubble({ message, outgoing, attachments, replyPreview, reactions, onImage, onVideo, onLongPress, onReplyPress, channelName, channelType, channelId, onCreateOrderFromMessage, creatingOrderDraft }: any) {
   const { colors } = useTheme();
+  const styles = createStyles(colors);
   const mediaType = (message.type ?? '').toUpperCase();
   const isInstagramSharedPostTemplate =
     String(channelType ?? '').toUpperCase() === 'INSTAGRAM' &&
@@ -334,17 +338,17 @@ function StandardMessageBubble({ message, outgoing, attachments, replyPreview, r
           </View>
         ) : null}
         {postchatForm ? (
-          <View style={{ gap: 12, padding: 12, borderRadius: 12, backgroundColor: colors.surface, borderColor: colors.cardBorder, borderWidth: 1 }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+          <View style={{ gap: spacing.md, padding: spacing.md, borderRadius: radius.md, backgroundColor: colors.surface, borderColor: colors.cardBorder, borderWidth: borderWidth.thin }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
               <FileText size={20} color={colors.primary} />
               <View style={{ flex: 1 }}>
-                <Text style={{ color: colors.textSecondary, fontSize: 11 }}>Post-chat form</Text>
-                <Text style={{ color: colors.text, fontWeight: '700' }}>{postchatForm.formName}</Text>
+                <Text style={{ color: colors.textSecondary, fontSize: fontSize.compact }}>Post-chat form</Text>
+                <Text style={{ color: colors.text, fontWeight: fontWeight.bold }}>{postchatForm.formName}</Text>
               </View>
             </View>
             {postchatForm.values.length ? postchatForm.values.map((field) => (
-              <View key={field.id} style={{ gap: 3 }}>
-                <Text style={{ color: colors.textSecondary, fontSize: 11, fontWeight: '600' }}>{field.label}</Text>
+              <View key={field.id} style={{ gap: spacing.tight }}>
+                <Text style={{ color: colors.textSecondary, fontSize: fontSize.compact, fontWeight: fontWeight.semibold }}>{field.label}</Text>
                 {field.type === 'RATING' ? (
                   <View style={styles.postchatRating} accessibilityLabel={`${Math.min(5, Math.max(0, Number.parseInt(field.value, 10) || 0))} out of 5 stars`}>
                     {Array.from({ length: 5 }, (_, index) => {
@@ -353,7 +357,7 @@ function StandardMessageBubble({ message, outgoing, attachments, replyPreview, r
                     })}
                     <Text style={[styles.postchatScore, { color: colors.textSecondary }]}>{Math.min(5, Math.max(0, Number.parseInt(field.value, 10) || 0))}/5</Text>
                   </View>
-                ) : <Text selectable style={{ color: colors.text, fontSize: 13, lineHeight: 20 }}>{field.value}</Text>}
+                ) : <Text selectable style={{ color: colors.text, fontSize: fontSize.caption, lineHeight: lineHeight.section }}>{field.value}</Text>}
               </View>
             )) : <Text style={{ color: colors.textSecondary }}>No additional feedback provided.</Text>}
           </View>
@@ -594,6 +598,7 @@ function StandardMessageBubble({ message, outgoing, attachments, replyPreview, r
 
 function LocationMessageCard({ location, outgoing }: { location: WhatsappLocation; outgoing: boolean }) {
   const { colors, isDark } = useTheme();
+  const styles = createStyles(colors);
   const coordinates = `${location.latitude},${location.longitude}`;
   const googleMapsUrl = location.url ?? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(coordinates)}`;
   const embedUrl = `https://www.google.com/maps?q=${encodeURIComponent(coordinates)}&z=15&output=embed`;
@@ -667,6 +672,7 @@ function LocationMessageCard({ location, outgoing }: { location: WhatsappLocatio
 
 function ContactMessageCard({ contacts, outgoing }: { contacts: WhatsappContactCard[]; outgoing: boolean }) {
   const { colors } = useTheme();
+  const styles = createStyles(colors);
   const [copiedContactIndex, setCopiedContactIndex] = useState<number | null>(null);
   const [copiedAll, setCopiedAll] = useState(false);
   const title = contacts.length === 1 ? 'Shared contact' : 'Shared contacts';
@@ -771,6 +777,8 @@ function ContactMessageCard({ contacts, outgoing }: { contacts: WhatsappContactC
 }
 
 function ReplyPreviewBody({ text, mediaType, outgoing, colors }: { text?: string | null; mediaType?: string | null; outgoing: boolean; colors: { textSecondary: string } }) {
+  const { colors: styleColors } = useTheme();
+  const styles = createStyles(styleColors);
   const presentation = getReplyPreviewPresentation(text, mediaType);
   const color = outgoing ? '#eef2ff' : colors.textSecondary;
   const Icon = presentation.kind === 'photo' || presentation.kind === 'sticker' ? ImageIcon
@@ -880,24 +888,24 @@ function resolveMediaUrl(base: string, value?: string): string {
   }
 }
 
-const styles = StyleSheet.create({
+const createStyles = createThemedStyles((colors) => StyleSheet.create({
   systemWrap: { alignItems: 'center', alignSelf: 'stretch' },
-  systemPill: { alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.85)', borderColor: '#e0f2fe', borderRadius: 999, borderWidth: 1, flexDirection: 'row', gap: 6, paddingHorizontal: 12, paddingVertical: 6, shadowColor: '#2563eb', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.08, shadowRadius: 8 },
-  systemPillMissed: { backgroundColor: 'rgba(255,255,255,0.85)', borderColor: '#fef3c7' },
-  systemIconCircle: { alignItems: 'center', backgroundColor: '#eff6ff', borderRadius: 10, height: 20, justifyContent: 'center', width: 20 },
-  systemIconCircleMissed: { backgroundColor: '#fffbeb' },
-  systemText: { color: '#475569', fontSize: 12, fontWeight: '500' },
-  systemTextMissed: { color: '#d97706' },
-  systemTime: { color: '#94a3b8', fontSize: 11 },
+  systemPill: { alignItems: 'center', backgroundColor: colors.surface, borderColor: colors.infoBorder, borderRadius: radius.pill, borderWidth: borderWidth.thin, flexDirection: 'row', gap: spacing.compact, paddingHorizontal: spacing.md, paddingVertical: spacing.compact, shadowColor: '#2563eb', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.08, shadowRadius: 8 },
+  systemPillMissed: { backgroundColor: colors.surface, borderColor: colors.warningBorder },
+  systemIconCircle: { alignItems: 'center', backgroundColor: colors.primarySoft, borderRadius: radius.inset, height: 20, justifyContent: 'center', width: 20 },
+  systemIconCircleMissed: { backgroundColor: colors.amberSoft },
+  systemText: { color: colors.textSecondary, fontSize: fontSize.small, fontWeight: fontWeight.medium },
+  systemTextMissed: { color: colors.warning },
+  systemTime: { color: colors.textMuted, fontSize: fontSize.compact },
   wrap: { alignSelf: 'flex-start', maxWidth: '82%', minWidth: 0 },
-  wrapWithCreateOrder: { alignItems: 'center', flexDirection: 'row', gap: 6, maxWidth: '90%' },
+  wrapWithCreateOrder: { alignItems: 'center', flexDirection: 'row', gap: spacing.compact, maxWidth: '90%' },
   bubblePressableWithAction: { flexShrink: 1, minWidth: 0 },
-  createOrderFromMessage: { alignItems: 'center', borderRadius: 16, borderWidth: 1, height: 32, justifyContent: 'center', width: 32, shadowColor: '#2563eb', shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.12, shadowRadius: 6, elevation: 3 },
+  createOrderFromMessage: { alignItems: 'center', borderRadius: radius.control, borderWidth: borderWidth.thin, height: 32, justifyContent: 'center', width: 32, shadowColor: '#2563eb', shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.12, shadowRadius: 6, elevation: 3 },
   wrapOutgoing: { alignSelf: 'flex-end' },
-  wrapWithReactions: { marginBottom: 8 },
+  wrapWithReactions: { marginBottom: spacing.sm },
   bubble: {
-    paddingHorizontal: 14,
-    paddingVertical: 10,
+    paddingHorizontal: spacing.inset,
+    paddingVertical: spacing.control,
     overflow: 'hidden',
     shadowColor: '#0f172a',
     shadowOffset: { width: 0, height: 4 },
@@ -906,168 +914,168 @@ const styles = StyleSheet.create({
     elevation: 1,
   },
   bubbleIncoming: {
-    borderTopLeftRadius: 18,
-    borderTopRightRadius: 18,
-    borderBottomRightRadius: 18,
-    borderBottomLeftRadius: 6,
+    borderTopLeftRadius: radius.xl,
+    borderTopRightRadius: radius.xl,
+    borderBottomRightRadius: radius.xl,
+    borderBottomLeftRadius: radius.compact,
   },
   bubbleOutgoing: {
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    borderBottomLeftRadius: 20,
-    borderBottomRightRadius: 6,
+    borderTopLeftRadius: radius.xxl,
+    borderTopRightRadius: radius.xxl,
+    borderBottomLeftRadius: radius.xxl,
+    borderBottomRightRadius: radius.compact,
   },
-  postchatRating: { alignItems: 'center', flexDirection: 'row', gap: 2, marginTop: 2 },
-  postchatStar: { fontSize: 18, lineHeight: 22 },
-  postchatScore: { fontSize: 11, fontWeight: '600', marginLeft: 4 },
+  postchatRating: { alignItems: 'center', flexDirection: 'row', gap: spacing.xxs, marginTop: spacing.xxs },
+  postchatStar: { fontSize: fontSize.heading, lineHeight: lineHeight.body },
+  postchatScore: { fontSize: fontSize.compact, fontWeight: fontWeight.semibold, marginLeft: spacing.xs },
   linkPreviewBubble: { width: '100%' },
-  incoming: { backgroundColor: '#fff', borderColor: '#d7e6fb', borderWidth: 1 },
-  referralBubble: { borderColor: '#f6d78d', borderWidth: 1, paddingHorizontal: 10, paddingVertical: 9 },
-  outgoing: { backgroundColor: '#315efb' },
-  embeddedCardOnlyBubble: { backgroundColor: 'transparent', borderWidth: 0, elevation: 0, paddingHorizontal: 0, paddingVertical: 0, shadowOpacity: 0 },
-  incomingTemplate: { backgroundColor: '#fff', borderColor: '#d7e6fb', borderWidth: 1, padding: 6 },
-  outgoingTemplate: { backgroundColor: '#315efb', padding: 6 },
-  messageText: { color: '#334155', fontSize: 15 },
-  outgoingText: { color: '#fff', fontSize: 15 },
-  emojiOnly: { fontSize: 44, lineHeight: 52 },
+  incoming: { backgroundColor: colors.surface, borderColor: colors.cardBorder, borderWidth: borderWidth.thin },
+  referralBubble: { borderColor: colors.warningBorder, borderWidth: borderWidth.thin, paddingHorizontal: spacing.control, paddingVertical: spacing.sm + spacing.hairline },
+  outgoing: { backgroundColor: colors.primary },
+  embeddedCardOnlyBubble: { backgroundColor: 'transparent', borderWidth: borderWidth.none, elevation: 0, paddingHorizontal: spacing.none, paddingVertical: spacing.none, shadowOpacity: 0 },
+  incomingTemplate: { backgroundColor: colors.surface, borderColor: colors.cardBorder, borderWidth: borderWidth.thin, padding: spacing.compact },
+  outgoingTemplate: { backgroundColor: colors.primary, padding: spacing.compact },
+  messageText: { color: colors.text, fontSize: fontSize.body },
+  outgoingText: { color: colors.primaryText, fontSize: fontSize.body },
+  emojiOnly: { fontSize: fontSize.emoji, lineHeight: lineHeight.emoji },
   // RN 0.88 Android can crash drawing decorated spans beyond numberOfLines.
   // Keep links colored and tappable without invoking that native drawing path.
-  link: { color: '#2563eb', textDecorationLine: Platform.OS === 'android' ? 'none' : 'underline' },
+  link: { color: colors.primary, textDecorationLine: Platform.OS === 'android' ? 'none' : 'underline' },
   outgoingLink: { color: '#eaf1ff' },
   phoneLink: { textDecorationLine: 'underline' },
-  readMore: { color: '#2563eb', fontSize: 12, fontWeight: '600' },
-  readMoreRow: { alignItems: 'center', flexDirection: 'row', gap: 3, marginTop: 4 },
-  broadcastBadge: { alignItems: 'center', alignSelf: 'flex-start', backgroundColor: '#315efb', borderRadius: 6, flexDirection: 'row', gap: 4, marginBottom: 6, paddingHorizontal: 6, paddingVertical: 3 },
-  broadcastBadgeText: { color: '#fff', fontSize: 10, fontWeight: '700', letterSpacing: 0.8, textTransform: 'uppercase' },
+  readMore: { color: colors.primary, fontSize: fontSize.small, fontWeight: fontWeight.semibold },
+  readMoreRow: { alignItems: 'center', flexDirection: 'row', gap: spacing.tight, marginTop: spacing.xs },
+  broadcastBadge: { alignItems: 'center', alignSelf: 'flex-start', backgroundColor: colors.primary, borderRadius: radius.compact, flexDirection: 'row', gap: spacing.xs, marginBottom: spacing.compact, paddingHorizontal: spacing.compact, paddingVertical: spacing.tight },
+  broadcastBadgeText: { color: colors.primaryText, fontSize: fontSize.tiny, fontWeight: fontWeight.bold, letterSpacing: letterSpacing.overline, textTransform: 'uppercase' },
   referralWrap: { width: '100%' },
-  referralWrapWithContent: { marginBottom: 10 },
-  referralImageWrap: { width: '100%', marginTop: 8 },
+  referralWrapWithContent: { marginBottom: spacing.control },
+  referralImageWrap: { width: '100%', marginTop: spacing.sm },
   outgoingMuted: { color: '#dbeafe' },
-  quoted: { alignSelf: 'stretch', backgroundColor: '#ffffff22', borderColor: '#ffffff55', borderRadius: 12, borderWidth: 1, marginBottom: 8, maxWidth: '100%', paddingHorizontal: 10, paddingVertical: 7 },
+  quoted: { alignSelf: 'stretch', backgroundColor: '#ffffff22', borderColor: '#ffffff55', borderRadius: radius.md, borderWidth: borderWidth.thin, marginBottom: spacing.sm, maxWidth: '100%', paddingHorizontal: spacing.control, paddingVertical: spacing.compact + spacing.hairline },
   quotedPressed: { opacity: 0.6 },
-  quotedIncoming: { backgroundColor: '#f1f5f9', borderColor: '#dbe4f1' },
-  quotedName: { color: '#ffffff', fontSize: 12, fontWeight: '700' },
-  quotedNameIncoming: { color: '#2563eb' },
-  quotedRow: { alignItems: 'center', flexDirection: 'row', gap: 8, marginTop: 5 },
-  quotedThumb: { borderRadius: 6, height: 40, width: 40 },
-  quotedType: { alignItems: 'center', flex: 1, flexDirection: 'row', gap: 6, minWidth: 0 },
-  quotedText: { color: '#eef2ff', flex: 1, fontSize: 12 },
-  quotedTextIncoming: { color: '#526987' },
-  templateCard: { backgroundColor: '#fff', borderColor: '#d7e6fb', borderRadius: 14, borderWidth: 1, overflow: 'hidden' },
+  quotedIncoming: { backgroundColor: colors.surfaceSecondary, borderColor: colors.cardBorder },
+  quotedName: { color: colors.primaryText, fontSize: fontSize.small, fontWeight: fontWeight.bold },
+  quotedNameIncoming: { color: colors.primary },
+  quotedRow: { alignItems: 'center', flexDirection: 'row', gap: spacing.sm, marginTop: spacing.xs + spacing.hairline },
+  quotedThumb: { borderRadius: radius.compact, height: 40, width: 40 },
+  quotedType: { alignItems: 'center', flex: 1, flexDirection: 'row', gap: spacing.compact, minWidth: 0 },
+  quotedText: { color: '#eef2ff', flex: 1, fontSize: fontSize.small },
+  quotedTextIncoming: { color: colors.textSecondary },
+  templateCard: { backgroundColor: colors.surface, borderColor: colors.cardBorder, borderRadius: radius.lg, borderWidth: borderWidth.thin, overflow: 'hidden' },
   templateCardOutgoing: { borderColor: 'rgba(255,255,255,0.2)' },
-  templateCardHeader: { alignItems: 'center', borderBottomColor: '#e5e7eb', borderBottomWidth: 1, flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 12, paddingVertical: 8 },
-  templateBadge: { alignItems: 'center', flexDirection: 'row', gap: 4 },
-  templateBadgeText: { color: '#2563eb', fontSize: 10, fontWeight: '700', letterSpacing: 0.5, textTransform: 'uppercase' },
-  templateCategoryBadge: { backgroundColor: '#eef4ff', borderRadius: 999, paddingHorizontal: 8, paddingVertical: 2 },
-  templateCategoryText: { color: '#2563eb', fontSize: 9, fontWeight: '700', letterSpacing: 0.3 },
-  templateHeaderMedia: { borderBottomColor: '#e5e7eb', borderBottomWidth: 1 },
+  templateCardHeader: { alignItems: 'center', borderBottomColor: colors.separator, borderBottomWidth: borderWidth.thin, flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: spacing.md, paddingVertical: spacing.sm },
+  templateBadge: { alignItems: 'center', flexDirection: 'row', gap: spacing.xs },
+  templateBadgeText: { color: colors.primary, fontSize: fontSize.tiny, fontWeight: fontWeight.bold, letterSpacing: 0.5, textTransform: 'uppercase' },
+  templateCategoryBadge: { backgroundColor: colors.primarySoft, borderRadius: radius.pill, paddingHorizontal: spacing.sm, paddingVertical: spacing.xxs },
+  templateCategoryText: { color: colors.primary, fontSize: fontSize.badge, fontWeight: fontWeight.bold, letterSpacing: 0.3 },
+  templateHeaderMedia: { borderBottomColor: colors.separator, borderBottomWidth: borderWidth.thin },
   templateHeaderImage: { height: 140, width: '100%' },
-  templateHeaderDoc: { alignItems: 'center', flexDirection: 'row', gap: 8, padding: 12 },
-  templateHeaderDocText: { color: '#334155', fontSize: 13, fontWeight: '600' },
-  templateHeaderTextWrap: { borderBottomColor: '#e5e7eb', borderBottomWidth: 1, paddingHorizontal: 12, paddingVertical: 10 },
-  templateHeaderText: { fontSize: 13, fontWeight: '700', color: '#334155' },
-  templateBodyWrap: { paddingHorizontal: 12, paddingVertical: 10 },
-  templateBodyText: { fontSize: 13, lineHeight: 20, color: '#334155' },
-  templateFooter: { color: '#64748b', fontSize: 11, paddingHorizontal: 12, paddingBottom: 8 },
-  templateButtons: { borderTopColor: '#e5e7eb', borderTopWidth: 1, gap: 6, paddingHorizontal: 12, paddingVertical: 10 },
-  templateButton: { alignItems: 'center', borderColor: '#d7e6fb', borderRadius: 12, borderWidth: 1, flexDirection: 'row', gap: 6, justifyContent: 'center', paddingHorizontal: 12, paddingVertical: 10 },
-  templateButtonText: { color: '#2563eb', fontSize: 13, fontWeight: '700' },
-  image: { borderRadius: 18, backgroundColor: '#e8eef7' },
-  imageGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 3, borderRadius: 18, overflow: 'hidden', width: 250 },
+  templateHeaderDoc: { alignItems: 'center', flexDirection: 'row', gap: spacing.sm, padding: spacing.md },
+  templateHeaderDocText: { color: colors.text, fontSize: fontSize.caption, fontWeight: fontWeight.semibold },
+  templateHeaderTextWrap: { borderBottomColor: colors.separator, borderBottomWidth: borderWidth.thin, paddingHorizontal: spacing.md, paddingVertical: spacing.control },
+  templateHeaderText: { fontSize: fontSize.caption, fontWeight: fontWeight.bold, color: colors.text },
+  templateBodyWrap: { paddingHorizontal: spacing.md, paddingVertical: spacing.control },
+  templateBodyText: { fontSize: fontSize.caption, lineHeight: lineHeight.section, color: colors.text },
+  templateFooter: { color: colors.textSecondary, fontSize: fontSize.compact, paddingHorizontal: spacing.md, paddingBottom: spacing.sm },
+  templateButtons: { borderTopColor: colors.separator, borderTopWidth: borderWidth.thin, gap: spacing.compact, paddingHorizontal: spacing.md, paddingVertical: spacing.control },
+  templateButton: { alignItems: 'center', borderColor: colors.cardBorder, borderRadius: radius.md, borderWidth: borderWidth.thin, flexDirection: 'row', gap: spacing.compact, justifyContent: 'center', paddingHorizontal: spacing.md, paddingVertical: spacing.control },
+  templateButtonText: { color: colors.primary, fontSize: fontSize.caption, fontWeight: fontWeight.bold },
+  image: { borderRadius: radius.xl, backgroundColor: colors.surfaceSecondary },
+  imageGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.tight, borderRadius: radius.xl, overflow: 'hidden', width: 250 },
   gridCell: { height: 123, position: 'relative', width: 123 },
   gridImage: { width: 123, height: 123 },
   gridOverflow: { ...StyleSheet.absoluteFill, alignItems: 'center', backgroundColor: 'rgba(15,23,42,0.58)', justifyContent: 'center' },
-  gridOverflowText: { color: '#fff', fontSize: 28, fontWeight: '700' },
-  voiceWrap: { gap: 6, maxWidth: 260 },
-  docList: { gap: 6 },
-  documentCard: { borderColor: '#d7e6fb', borderRadius: 16, borderWidth: 1, overflow: 'hidden', width: 250 },
+  gridOverflowText: { color: colors.primaryText, fontSize: fontSize.display, fontWeight: fontWeight.bold },
+  voiceWrap: { gap: spacing.compact, maxWidth: 260 },
+  docList: { gap: spacing.compact },
+  documentCard: { borderColor: colors.cardBorder, borderRadius: radius.control, borderWidth: borderWidth.thin, overflow: 'hidden', width: 250 },
   documentCardOutgoing: { backgroundColor: 'rgba(255,255,255,0.12)', borderColor: 'rgba(255,255,255,0.24)' },
-  documentPreview: { backgroundColor: '#f8fafc', height: 170, width: '100%' },
+  documentPreview: { backgroundColor: colors.background, height: 170, width: '100%' },
   documentPreviewImage: { height: '100%', width: '100%' },
-  documentFooter: { alignItems: 'center', flexDirection: 'row', gap: 10, paddingHorizontal: 12, paddingVertical: 10 },
-  documentIcon: { alignItems: 'center', backgroundColor: '#eef4ff', borderRadius: 13, height: 36, justifyContent: 'center', width: 36 },
+  documentFooter: { alignItems: 'center', flexDirection: 'row', gap: spacing.control, paddingHorizontal: spacing.md, paddingVertical: spacing.control },
+  documentIcon: { alignItems: 'center', backgroundColor: colors.primarySoft, borderRadius: radius.chip, height: 36, justifyContent: 'center', width: 36 },
   documentIconOutgoing: { backgroundColor: 'rgba(255,255,255,0.16)' },
   documentCopy: { flex: 1, minWidth: 0 },
-  locationCard: { borderColor: '#d7e6fb', borderRadius: 16, borderWidth: 1, overflow: 'hidden', width: 250 },
+  locationCard: { borderColor: colors.cardBorder, borderRadius: radius.control, borderWidth: borderWidth.thin, overflow: 'hidden', width: 250 },
   locationCardOutgoing: { backgroundColor: 'rgba(255,255,255,0.12)', borderColor: 'rgba(255,255,255,0.24)' },
   locationMap: { height: 145, overflow: 'hidden', width: '100%' },
   locationWebView: { backgroundColor: 'transparent', height: '100%', width: '100%' },
-  locationMapOverlay: { bottom: 0, left: 0, padding: 8, position: 'absolute', right: 0, top: 0, alignItems: 'flex-end', justifyContent: 'flex-end' },
-  locationMapButton: { alignItems: 'center', backgroundColor: 'rgba(15, 23, 42, 0.78)', borderRadius: 999, flexDirection: 'row', gap: 5, paddingHorizontal: 10, paddingVertical: 6 },
-  locationMapButtonText: { color: '#fff', fontSize: 11, fontWeight: '700' },
-  locationDetails: { alignItems: 'flex-start', flexDirection: 'row', gap: 10, paddingHorizontal: 12, paddingVertical: 10 },
+  locationMapOverlay: { bottom: 0, left: 0, padding: spacing.sm, position: 'absolute', right: 0, top: 0, alignItems: 'flex-end', justifyContent: 'flex-end' },
+  locationMapButton: { alignItems: 'center', backgroundColor: 'rgba(15, 23, 42, 0.78)', borderRadius: radius.pill, flexDirection: 'row', gap: spacing.xs + spacing.hairline, paddingHorizontal: spacing.control, paddingVertical: spacing.compact },
+  locationMapButtonText: { color: colors.primaryText, fontSize: fontSize.compact, fontWeight: fontWeight.bold },
+  locationDetails: { alignItems: 'flex-start', flexDirection: 'row', gap: spacing.control, paddingHorizontal: spacing.md, paddingVertical: spacing.control },
   locationDetailsOutgoing: { backgroundColor: 'rgba(255,255,255,0.03)' },
   locationDetailsPressed: { opacity: 0.72 },
-  locationIcon: { marginTop: 2 },
+  locationIcon: { marginTop: spacing.xxs },
   locationCopy: { flex: 1, minWidth: 0 },
-  locationTitle: { fontSize: 13, fontWeight: '700' },
-  locationAddress: { fontSize: 11, marginTop: 2 },
-  locationCoordinates: { color: '#94a3b8', fontSize: 10, marginTop: 3 },
+  locationTitle: { fontSize: fontSize.caption, fontWeight: fontWeight.bold },
+  locationAddress: { fontSize: fontSize.compact, marginTop: spacing.xxs },
+  locationCoordinates: { color: colors.textMuted, fontSize: fontSize.tiny, marginTop: spacing.tight },
   locationCoordinatesOutgoing: { color: 'rgba(255,255,255,0.58)' },
-  contactCard: { borderColor: '#d7e6fb', borderRadius: 16, borderWidth: 1, overflow: 'hidden', width: 250 },
+  contactCard: { borderColor: colors.cardBorder, borderRadius: radius.control, borderWidth: borderWidth.thin, overflow: 'hidden', width: 250 },
   contactCardOutgoing: { backgroundColor: 'rgba(255,255,255,0.12)', borderColor: 'rgba(255,255,255,0.24)' },
-  contactHeader: { alignItems: 'center', borderBottomColor: '#d7e6fb', borderBottomWidth: 1, flexDirection: 'row', gap: 8, minHeight: 48, paddingHorizontal: 10, paddingVertical: 8 },
+  contactHeader: { alignItems: 'center', borderBottomColor: colors.cardBorder, borderBottomWidth: borderWidth.thin, flexDirection: 'row', gap: spacing.sm, minHeight: 48, paddingHorizontal: spacing.control, paddingVertical: spacing.sm },
   contactHeaderOutgoing: { borderBottomColor: 'rgba(255,255,255,0.18)' },
-  contactHeaderIcon: { alignItems: 'center', borderRadius: 10, height: 28, justifyContent: 'center', width: 28 },
+  contactHeaderIcon: { alignItems: 'center', borderRadius: radius.inset, height: 28, justifyContent: 'center', width: 28 },
   contactHeaderIconOutgoing: { backgroundColor: 'rgba(16,185,129,0.2)' },
-  contactHeaderTitle: { flex: 1, fontSize: 12, fontWeight: '800' },
-  contactIconButton: { alignItems: 'center', borderRadius: 13, height: 26, justifyContent: 'center', width: 26 },
+  contactHeaderTitle: { flex: 1, fontSize: fontSize.small, fontWeight: fontWeight.extrabold },
+  contactIconButton: { alignItems: 'center', borderRadius: radius.chip, height: 26, justifyContent: 'center', width: 26 },
   contactIconButtonOutgoing: { backgroundColor: 'rgba(255,255,255,0.12)' },
-  contactCount: { alignItems: 'center', borderRadius: 999, height: 22, justifyContent: 'center', minWidth: 22, paddingHorizontal: 7 },
+  contactCount: { alignItems: 'center', borderRadius: radius.pill, height: 22, justifyContent: 'center', minWidth: 22, paddingHorizontal: spacing.compact + spacing.hairline },
   contactCountOutgoing: { backgroundColor: 'rgba(255,255,255,0.16)' },
-  contactCountText: { fontSize: 10, fontWeight: '700' },
-  contactRow: { flexDirection: 'row', gap: 9, paddingHorizontal: 10, paddingVertical: 11 },
-  contactRowDivider: { borderTopWidth: 1 },
+  contactCountText: { fontSize: fontSize.tiny, fontWeight: fontWeight.bold },
+  contactRow: { flexDirection: 'row', gap: spacing.sm + spacing.hairline, paddingHorizontal: spacing.control, paddingVertical: spacing.control + spacing.hairline },
+  contactRowDivider: { borderTopWidth: borderWidth.thin },
   contactRowDividerOutgoing: { borderTopColor: 'rgba(255,255,255,0.18)' },
-  contactAvatar: { alignItems: 'center', borderRadius: 18, height: 36, justifyContent: 'center', width: 36 },
+  contactAvatar: { alignItems: 'center', borderRadius: radius.xl, height: 36, justifyContent: 'center', width: 36 },
   contactAvatarOutgoing: { backgroundColor: 'rgba(16,185,129,0.2)' },
-  contactAvatarText: { fontSize: 12, fontWeight: '800' },
-  contactBody: { flex: 1, minWidth: 0, paddingRight: 2 },
-  contactName: { fontSize: 13, fontWeight: '700' },
-  contactInfoRow: { alignItems: 'center', flexDirection: 'row', gap: 5, marginTop: 4 },
-  contactInfoText: { flex: 1, fontSize: 11, minWidth: 0 },
-  contactCopyButton: { alignItems: 'center', borderRadius: 13, height: 26, justifyContent: 'center', width: 26 },
+  contactAvatarText: { fontSize: fontSize.small, fontWeight: fontWeight.extrabold },
+  contactBody: { flex: 1, minWidth: 0, paddingRight: spacing.xxs },
+  contactName: { fontSize: fontSize.caption, fontWeight: fontWeight.bold },
+  contactInfoRow: { alignItems: 'center', flexDirection: 'row', gap: spacing.xs + spacing.hairline, marginTop: spacing.xs },
+  contactInfoText: { flex: 1, fontSize: fontSize.compact, minWidth: 0 },
+  contactCopyButton: { alignItems: 'center', borderRadius: radius.chip, height: 26, justifyContent: 'center', width: 26 },
   contactCopyButtonOutgoing: { backgroundColor: 'rgba(255,255,255,0.12)' },
-  file: { alignItems: 'center', flexDirection: 'row', gap: 10, paddingVertical: 2 },
-  fileName: { color: '#17233a', flex: 1, fontSize: 14 },
-  fileMeta: { color: '#64748b', fontSize: 11, marginTop: 2 },
-  missingMedia: { color: '#94a3b8', fontSize: 13, fontStyle: 'italic' },
-  metaRow: { alignItems: 'center', flexDirection: 'row', gap: 6, marginTop: 6 },
-  embeddedCardMetaRow: { paddingHorizontal: 8 },
-  metaRight: { alignItems: 'center', flexDirection: 'row', gap: 6, marginLeft: 'auto' },
-  status: { color: '#dbeafe', fontSize: 11 },
+  file: { alignItems: 'center', flexDirection: 'row', gap: spacing.control, paddingVertical: spacing.xxs },
+  fileName: { color: colors.text, flex: 1, fontSize: fontSize.section },
+  fileMeta: { color: colors.textSecondary, fontSize: fontSize.compact, marginTop: spacing.xxs },
+  missingMedia: { color: colors.textMuted, fontSize: fontSize.caption, fontStyle: 'italic' },
+  metaRow: { alignItems: 'center', flexDirection: 'row', gap: spacing.compact, marginTop: spacing.compact },
+  embeddedCardMetaRow: { paddingHorizontal: spacing.sm },
+  metaRight: { alignItems: 'center', flexDirection: 'row', gap: spacing.compact, marginLeft: 'auto' },
+  status: { color: '#dbeafe', fontSize: fontSize.compact },
   statusSeen: { color: '#7dd3fc' },
   statusFailed: { color: '#fda4af' },
-  incomingTime: { color: '#94a3b8' },
-  editedChip: { borderRadius: 999, fontSize: 9, paddingHorizontal: 6, paddingVertical: 1 },
-  editedOutgoing: { borderColor: '#ffffff33', borderWidth: 1, color: '#dbeafe' },
-  editedIncoming: { borderColor: '#dbe4f1', borderWidth: 1, color: '#64748b' },
-  failedText: { color: '#fda4af', fontSize: 11, marginTop: 4 },
+  incomingTime: { color: colors.textMuted },
+  editedChip: { borderRadius: radius.pill, fontSize: fontSize.badge, paddingHorizontal: spacing.compact, paddingVertical: spacing.hairline },
+  editedOutgoing: { borderColor: '#ffffff33', borderWidth: borderWidth.thin, color: '#dbeafe' },
+  editedIncoming: { borderColor: colors.cardBorder, borderWidth: borderWidth.thin, color: colors.textSecondary },
+  failedText: { color: '#fda4af', fontSize: fontSize.compact, marginTop: spacing.xs },
   reactionRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 6,
+    gap: spacing.compact,
     marginTop: -10,
-    paddingHorizontal: 2,
+    paddingHorizontal: spacing.xxs,
     zIndex: 2,
   },
   reactionRowOutgoing: { justifyContent: 'flex-end' },
   reactionPill: {
     alignItems: 'center',
-    backgroundColor: '#fff',
-    borderColor: '#e2e8f0',
-    borderRadius: 999,
-    borderWidth: 1,
+    backgroundColor: colors.surface,
+    borderColor: colors.inputBorder,
+    borderRadius: radius.pill,
+    borderWidth: borderWidth.thin,
     elevation: 2,
     flexDirection: 'row',
-    gap: 3,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
+    gap: spacing.tight,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xxs,
     shadowColor: '#0f172a',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.12,
     shadowRadius: 4,
   },
-  reactionEmoji: { fontSize: 14 },
-  reactionCount: { color: '#475569', fontSize: 11, fontWeight: '700' },
-});
+  reactionEmoji: { fontSize: fontSize.section },
+  reactionCount: { color: colors.textSecondary, fontSize: fontSize.compact, fontWeight: fontWeight.bold },
+}));

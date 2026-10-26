@@ -11,15 +11,24 @@
  * over margins when laying out rows and cards.
  */
 
+// Dense sizes retain existing compact layouts when migrating older screens.
 export const spacing = {
   none: 0,
+  hairline: 1,
   xxs: 2,
+  tight: 3,
   xs: 4,
+  compact: 6,
   sm: 8,
+  control: 10,
   md: 12,
+  inset: 14,
   lg: 16,
+  roomy: 18,
   xl: 20,
+  sectionInset: 22,
   xxl: 24,
+  block: 28,
   xxxl: 32,
   huge: 40,
   section: 48,
@@ -29,28 +38,47 @@ export type SpacingKey = keyof typeof spacing;
 
 export const radius = {
   none: 0,
+  xxs: 2,
   xs: 4,
+  badge: 5,
+  compact: 6,
   sm: 8,
+  inset: 10,
   md: 12,
+  chip: 13,
   lg: 14,
+  control: 16,
   xl: 18,
   xxl: 20,
+  panel: 22,
   xxxl: 24,
+  dialog: 28,
   pill: 999,
 } as const;
 
 export type RadiusKey = keyof typeof radius;
 
 export const fontSize = {
+  micro: 8,
+  badge: 9,
   tiny: 10,
+  compact: 11,
   small: 12,
   caption: 13,
   section: 14,
   body: 15,
   subheading: 16,
+  control: 17,
   heading: 18,
+  lead: 19,
+  sectionTitle: 20,
+  headingLarge: 22,
   title: 24,
   display: 28,
+  displaySmall: 30,
+  displayLarge: 36,
+  displayHero: 40,
+  emoji: 44,
 } as const;
 
 export type FontSizeKey = keyof typeof fontSize;
@@ -68,14 +96,20 @@ export type FontWeightKey = keyof typeof fontWeight;
 /** Optional explicit line heights; apply when a layout needs predictable text rhythm. */
 export const lineHeight = {
   tiny: 14,
+  micro: 15,
   small: 16,
+  compact: 17,
   caption: 18,
+  control: 19,
   section: 20,
+  subtitle: 21,
   body: 22,
+  spacious: 23,
   subheading: 24,
   heading: 26,
   title: 32,
   display: 36,
+  emoji: 52,
 } as const;
 
 export const letterSpacing = { tight: -0.6, normal: 0, wide: 0.4, overline: 0.8 } as const;

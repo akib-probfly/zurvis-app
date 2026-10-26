@@ -1,3 +1,4 @@
+import { borderWidth, controlSize, fontSize, radius, spacing } from '../theme/tokens';
 import { Search, X } from 'lucide-react-native';
 import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { useTheme } from '../theme/ThemeContext';
@@ -30,7 +31,7 @@ export function AppSearchField({
   autoFocus,
 }: Props) {
   const { colors } = useTheme();
-  const height = size === 'sm' ? 38 : 44;
+  const height = size === 'sm' ? controlSize.compact : controlSize.touchTarget;
   const iconSize = size === 'sm' ? 15 : 18;
   const background = tone === 'surface' ? colors.surface : colors.background;
 
@@ -63,12 +64,12 @@ export function AppSearchField({
 const styles = StyleSheet.create({
   wrap: {
     alignItems: 'center',
-    borderRadius: 999,
-    borderWidth: 1,
+    borderRadius: radius.pill,
+    borderWidth: borderWidth.thin,
     flex: 1,
     flexDirection: 'row',
-    paddingHorizontal: 12,
+    paddingHorizontal: spacing.md,
   },
   wrapFlush: { flex: 0, alignSelf: 'stretch' },
-  input: { flex: 1, fontSize: 14, marginLeft: 8, paddingVertical: 0 },
+  input: { flex: 1, fontSize: fontSize.section, marginLeft: spacing.sm, paddingVertical: spacing.none },
 });

@@ -1,3 +1,5 @@
+import { createThemedStyles } from '../theme/createThemedStyles';
+import { borderWidth, fontSize, fontWeight, lineHeight, radius, spacing } from '../theme/tokens';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import * as Clipboard from 'expo-clipboard';
 import { Image } from 'expo-image';
@@ -146,11 +148,13 @@ function useInvalidateWebchat(channelId: string) {
 
 function Card({ children }: { children: React.ReactNode }) {
   const { colors } = useTheme();
+  const styles = createStyles(colors);
   return <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.cardBorder }]}>{children}</View>;
 }
 
 function SectionTitle({ title, sub }: { title: string; sub?: string }) {
   const { colors } = useTheme();
+  const styles = createStyles(colors);
   return (
     <View>
       <Text style={[styles.cardTitle, { color: colors.text }]}>{title}</Text>
@@ -161,6 +165,7 @@ function SectionTitle({ title, sub }: { title: string; sub?: string }) {
 
 function FieldEdit({ label, value, onChange, placeholder, multiline = false, maxLength }: { label: string; value: string; onChange: (text: string) => void; placeholder: string; multiline?: boolean; maxLength?: number }) {
   const { colors } = useTheme();
+  const styles = createStyles(colors);
   return (
     <View style={styles.fieldEdit}>
       <View style={styles.fieldLabelRow}>
@@ -183,6 +188,7 @@ function FieldEdit({ label, value, onChange, placeholder, multiline = false, max
 
 function ToggleRow({ label, sub, value, onChange, disabled = false }: { label: string; sub?: string; value: boolean; onChange: (value: boolean) => void; disabled?: boolean }) {
   const { colors } = useTheme();
+  const styles = createStyles(colors);
   return (
     <View style={styles.toggleRow}>
       <View style={styles.toggleCopy}>
@@ -196,6 +202,7 @@ function ToggleRow({ label, sub, value, onChange, disabled = false }: { label: s
 
 function CopyField({ label, value, mono = false }: { label: string; value: string; mono?: boolean }) {
   const { colors } = useTheme();
+  const styles = createStyles(colors);
   const [copied, setCopied] = useState(false);
   const copyValue = async () => {
     if (!value || value === 'Not available') return;
@@ -220,6 +227,7 @@ function CopyField({ label, value, mono = false }: { label: string; value: strin
 
 function PrimaryButton({ label, onPress, disabled = false, pending = false }: { label: string; onPress: () => void; disabled?: boolean; pending?: boolean }) {
   const { colors } = useTheme();
+  const styles = createStyles(colors);
   return (
     <Pressable style={[styles.primaryButton, { backgroundColor: colors.primary, opacity: disabled ? 0.6 : 1 }]} onPress={onPress} disabled={disabled}>
       {pending ? <ActivityIndicator color="#fff" size="small" /> : <Save color="#fff" size={16} />}
@@ -230,6 +238,7 @@ function PrimaryButton({ label, onPress, disabled = false, pending = false }: { 
 
 function ChipSelect<T extends string>({ options, value, onChange }: { options: ReadonlyArray<{ value: T; label: string }>; value: T; onChange: (value: T) => void }) {
   const { colors } = useTheme();
+  const styles = createStyles(colors);
   return (
     <View style={styles.chipRow}>
       {options.map((option) => {
@@ -250,6 +259,7 @@ function ChipSelect<T extends string>({ options, value, onChange }: { options: R
 
 export function WebchatConfigurationSection({ channel, lifecycle }: { channel: ChannelDetails; lifecycle: ChannelLifecycle }) {
   const { colors } = useTheme();
+  const styles = createStyles(colors);
   const channelId = channel.id;
   const invalidate = useInvalidateWebchat(channelId);
   const settingsQuery = useWebchatSettings(channelId);
@@ -317,7 +327,7 @@ export function WebchatConfigurationSection({ channel, lifecycle }: { channel: C
             <Text style={[styles.outlineButtonText, { color: colors.primary }]}>Open chat preview</Text>
           </Pressable>
         ) : null}
-        <View style={{ marginTop: 14 }}>
+        <View style={{ marginTop: spacing.inset }}>
           <PrimaryButton label="Save configuration" onPress={() => save.mutate()} disabled={!widgetName.trim() || save.isPending} pending={save.isPending} />
         </View>
       </Card>
@@ -326,6 +336,8 @@ export function WebchatConfigurationSection({ channel, lifecycle }: { channel: C
 }
 
 function AppearancePreview({ appearance }: { appearance: AppearanceDraft }) {
+  const { colors: styleColors } = useTheme();
+  const styles = createStyles(styleColors);
   const radius = appearance.buttonShape === 'DEFAULT' ? 999 : appearance.cornerRadius;
   const banner = appearance.buttonShape === 'CUSTOM_BANNER';
   const avatarPalette = ['#0f172a', '#94a3b8', '#64748b', '#334155', '#cbd5e1'];
@@ -387,6 +399,7 @@ function AppearancePreview({ appearance }: { appearance: AppearanceDraft }) {
 
 export function WebchatAppearanceSection({ channel, lifecycle }: { channel: ChannelDetails; lifecycle: ChannelLifecycle }) {
   const { colors } = useTheme();
+  const styles = createStyles(colors);
   const channelId = channel.id;
   const invalidate = useInvalidateWebchat(channelId);
   const settingsQuery = useWebchatSettings(channelId);
@@ -470,7 +483,7 @@ export function WebchatAppearanceSection({ channel, lifecycle }: { channel: Chan
       <Card>
         <View style={styles.availabilityRow}>
           <View style={styles.toggleCopy}>
-            <Text style={[styles.cardTitle, { color: colors.text, fontSize: 14 }]}>Widget availability</Text>
+            <Text style={[styles.cardTitle, { color: colors.text, fontSize: fontSize.section }]}>Widget availability</Text>
             <Text style={[styles.toggleSub, { color: colors.textSecondary }]}>{isLive ? 'Live on site' : 'Hidden from site'}</Text>
           </View>
           <AppToggle value={isLive} onValueChange={() => toggleLive.mutate()} disabled={toggleLive.isPending || lifecycle.isRemoved} accessibilityLabel={isLive ? 'Pause widget' : 'Resume widget'} />
@@ -566,6 +579,7 @@ function FeatureIcon({ icon, color }: { icon: string; color: string }) {
 
 export function WebchatFeaturesSection({ channelId }: { channelId: string }) {
   const { colors } = useTheme();
+  const styles = createStyles(colors);
   const invalidate = useInvalidateWebchat(channelId);
   const settingsQuery = useWebchatSettings(channelId);
   const [features, setFeatures] = useState<FeaturesDraft>({ voiceCall: false, videoCall: false, closeFromVisitor: false, screenSharing: false, coBrowsing: false });
@@ -626,6 +640,7 @@ function hydrateForm(form: WebchatFormConfig): WebchatFormConfig {
 
 export function WebchatFormsSection({ channelId }: { channelId: string }) {
   const { colors } = useTheme();
+  const styles = createStyles(colors);
   const invalidate = useInvalidateWebchat(channelId);
   const settingsQuery = useWebchatSettings(channelId);
   const [forms, setForms] = useState<FormsState | null>(null);
@@ -820,6 +835,7 @@ export function WebchatFormsSection({ channelId }: { channelId: string }) {
 
 export function WebchatSnippetSection({ channelId }: { channelId: string }) {
   const { colors } = useTheme();
+  const styles = createStyles(colors);
   const [copied, setCopied] = useState(false);
   const installationQuery = useWebchatInstallation(channelId, true);
   const snippet = installationQuery.data?.code ? formatSnippet(installationQuery.data.code) : '';
@@ -841,7 +857,7 @@ export function WebchatSnippetSection({ channelId }: { channelId: string }) {
         <View style={[styles.snippetBox, { backgroundColor: colors.surfaceSecondary, borderColor: colors.cardBorder }]}>
           <Text style={[styles.snippetText, { color: colors.text }]} selectable>{snippet || 'Loading installation code…'}</Text>
         </View>
-        <Pressable style={[styles.primaryButton, { backgroundColor: colors.primary, marginTop: 14, opacity: snippet ? 1 : 0.6 }]} onPress={copySnippet} disabled={!snippet}>
+        <Pressable style={[styles.primaryButton, { backgroundColor: colors.primary, marginTop: spacing.inset, opacity: snippet ? 1 : 0.6 }]} onPress={copySnippet} disabled={!snippet}>
           {copied ? <Check color="#fff" size={16} /> : <Copy color="#fff" size={16} />}
           <Text style={styles.primaryButtonText}>{copied ? 'Copied' : 'Copy snippet'}</Text>
         </Pressable>
@@ -850,123 +866,123 @@ export function WebchatSnippetSection({ channelId }: { channelId: string }) {
   );
 }
 
-const styles = StyleSheet.create({
-  content: { padding: 16, paddingBottom: 40 },
-  card: { backgroundColor: '#fff', borderColor: '#d8e6fb', borderRadius: 20, borderWidth: 1, marginBottom: 16, padding: 16 },
-  cardTitle: { color: '#0f172a', fontSize: 16, fontWeight: '700' },
-  cardSub: { color: '#64748b', fontSize: 13, lineHeight: 19, marginTop: 4 },
+const createStyles = createThemedStyles((colors) => StyleSheet.create({
+  content: { padding: spacing.lg, paddingBottom: spacing.huge },
+  card: { backgroundColor: colors.surface, borderColor: colors.cardBorder, borderRadius: radius.xxl, borderWidth: borderWidth.thin, marginBottom: spacing.lg, padding: spacing.lg },
+  cardTitle: { color: colors.text, fontSize: fontSize.subheading, fontWeight: fontWeight.bold },
+  cardSub: { color: colors.textSecondary, fontSize: fontSize.caption, lineHeight: lineHeight.control, marginTop: spacing.xs },
   heroRow: { alignItems: 'center', flexDirection: 'row' },
-  heroCopy: { flex: 1, marginLeft: 14, minWidth: 0 },
-  heroName: { color: '#0f172a', fontSize: 19, fontWeight: '800' },
-  heroSub: { color: '#64748b', fontSize: 12, lineHeight: 17, marginTop: 2 },
-  badges: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 6 },
-  badge: { borderRadius: 10, paddingHorizontal: 8, paddingVertical: 4 },
-  badgeText: { fontSize: 10, fontWeight: '700', textTransform: 'uppercase' },
-  fieldEdit: { marginTop: 14 },
-  fieldLabel: { color: '#64748b', fontSize: 12, fontWeight: '600' },
+  heroCopy: { flex: 1, marginLeft: spacing.inset, minWidth: 0 },
+  heroName: { color: colors.text, fontSize: fontSize.lead, fontWeight: fontWeight.extrabold },
+  heroSub: { color: colors.textSecondary, fontSize: fontSize.small, lineHeight: lineHeight.compact, marginTop: spacing.xxs },
+  badges: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.compact, marginTop: spacing.compact },
+  badge: { borderRadius: radius.inset, paddingHorizontal: spacing.sm, paddingVertical: spacing.xs },
+  badgeText: { fontSize: fontSize.tiny, fontWeight: fontWeight.bold, textTransform: 'uppercase' },
+  fieldEdit: { marginTop: spacing.inset },
+  fieldLabel: { color: colors.textSecondary, fontSize: fontSize.small, fontWeight: fontWeight.semibold },
   fieldLabelRow: { alignItems: 'center', flexDirection: 'row', justifyContent: 'space-between' },
-  charHint: { color: '#64748b', fontSize: 11 },
-  input: { backgroundColor: '#f8fbff', borderColor: '#cfe1ff', borderRadius: 14, borderWidth: 1, color: '#0f172a', fontSize: 14, height: 46, marginTop: 6, paddingHorizontal: 14 },
-  inputMultiline: { backgroundColor: '#f8fbff', borderColor: '#cfe1ff', borderRadius: 14, borderWidth: 1, color: '#0f172a', fontSize: 14, marginTop: 6, minHeight: 72, paddingHorizontal: 14, paddingVertical: 10, textAlignVertical: 'top' },
-  readonlyBox: { backgroundColor: '#f6f9ff', borderColor: '#d8e6fb', borderRadius: 14, borderWidth: 1, marginTop: 6, minHeight: 46, justifyContent: 'center', paddingHorizontal: 14, paddingVertical: 10 },
-  readonlyText: { color: '#0f172a', fontSize: 14 },
-  configField: { gap: 6, marginTop: 14 },
-  configLabel: { color: '#64748b', fontSize: 12, fontWeight: '600' },
-  configFieldRow: { alignItems: 'stretch', flexDirection: 'row', gap: 8 },
-  configValueBox: { backgroundColor: '#f6f9ff', borderColor: '#d8e6fb', borderRadius: 12, borderWidth: 1, flex: 1, justifyContent: 'center', minHeight: 42, paddingHorizontal: 12, paddingVertical: 8 },
-  configValue: { color: '#0f172a', fontSize: 13, fontWeight: '600', lineHeight: 18 },
-  configValueMono: { fontFamily: 'monospace', fontSize: 12 },
-  copyButton: { alignItems: 'center', backgroundColor: '#fff', borderColor: '#d8e6fb', borderRadius: 12, borderWidth: 1, height: 42, justifyContent: 'center', width: 42 },
-  primaryButton: { alignItems: 'center', backgroundColor: '#2563eb', borderRadius: 14, flexDirection: 'row', gap: 6, justifyContent: 'center', paddingVertical: 12 },
-  primaryButtonText: { color: '#fff', flexShrink: 1, fontSize: 13, fontWeight: '700', textAlign: 'center' },
-  outlineButton: { alignItems: 'center', borderColor: '#cfe0fa', borderRadius: 14, borderWidth: 1, flexDirection: 'row', gap: 6, justifyContent: 'center', marginTop: 12, paddingVertical: 12 },
-  outlineButtonText: { fontSize: 13, fontWeight: '700' },
-  groupLabel: { color: '#64748b', fontSize: 12, fontWeight: '700', marginTop: 18 },
-  toggleRow: { alignItems: 'center', flexDirection: 'row', gap: 12, marginTop: 14 },
+  charHint: { color: colors.textSecondary, fontSize: fontSize.compact },
+  input: { backgroundColor: colors.background, borderColor: colors.inputBorder, borderRadius: radius.lg, borderWidth: borderWidth.thin, color: colors.text, fontSize: fontSize.section, height: 46, marginTop: spacing.compact, paddingHorizontal: spacing.inset },
+  inputMultiline: { backgroundColor: colors.background, borderColor: colors.inputBorder, borderRadius: radius.lg, borderWidth: borderWidth.thin, color: colors.text, fontSize: fontSize.section, marginTop: spacing.compact, minHeight: 72, paddingHorizontal: spacing.inset, paddingVertical: spacing.control, textAlignVertical: 'top' },
+  readonlyBox: { backgroundColor: colors.background, borderColor: colors.cardBorder, borderRadius: radius.lg, borderWidth: borderWidth.thin, marginTop: spacing.compact, minHeight: 46, justifyContent: 'center', paddingHorizontal: spacing.inset, paddingVertical: spacing.control },
+  readonlyText: { color: colors.text, fontSize: fontSize.section },
+  configField: { gap: spacing.compact, marginTop: spacing.inset },
+  configLabel: { color: colors.textSecondary, fontSize: fontSize.small, fontWeight: fontWeight.semibold },
+  configFieldRow: { alignItems: 'stretch', flexDirection: 'row', gap: spacing.sm },
+  configValueBox: { backgroundColor: colors.background, borderColor: colors.cardBorder, borderRadius: radius.md, borderWidth: borderWidth.thin, flex: 1, justifyContent: 'center', minHeight: 42, paddingHorizontal: spacing.md, paddingVertical: spacing.sm },
+  configValue: { color: colors.text, fontSize: fontSize.caption, fontWeight: fontWeight.semibold, lineHeight: lineHeight.caption },
+  configValueMono: { fontFamily: 'monospace', fontSize: fontSize.small },
+  copyButton: { alignItems: 'center', backgroundColor: colors.surface, borderColor: colors.cardBorder, borderRadius: radius.md, borderWidth: borderWidth.thin, height: 42, justifyContent: 'center', width: 42 },
+  primaryButton: { alignItems: 'center', backgroundColor: colors.primary, borderRadius: radius.lg, flexDirection: 'row', gap: spacing.compact, justifyContent: 'center', paddingVertical: spacing.md },
+  primaryButtonText: { color: colors.primaryText, flexShrink: 1, fontSize: fontSize.caption, fontWeight: fontWeight.bold, textAlign: 'center' },
+  outlineButton: { alignItems: 'center', borderColor: colors.cardBorder, borderRadius: radius.lg, borderWidth: borderWidth.thin, flexDirection: 'row', gap: spacing.compact, justifyContent: 'center', marginTop: spacing.md, paddingVertical: spacing.md },
+  outlineButtonText: { fontSize: fontSize.caption, fontWeight: fontWeight.bold },
+  groupLabel: { color: colors.textSecondary, fontSize: fontSize.small, fontWeight: fontWeight.bold, marginTop: spacing.roomy },
+  toggleRow: { alignItems: 'center', flexDirection: 'row', gap: spacing.md, marginTop: spacing.inset },
   toggleCopy: { flex: 1, minWidth: 0 },
-  toggleLabel: { color: '#0f172a', fontSize: 14, fontWeight: '600' },
-  toggleSub: { color: '#64748b', fontSize: 12, lineHeight: 17, marginTop: 2 },
-  availabilityRow: { alignItems: 'center', flexDirection: 'row', gap: 12 },
-  swatchRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginTop: 10 },
-  swatch: { alignItems: 'center', borderRadius: 20, height: 40, justifyContent: 'center', width: 40 },
-  swatchActive: { borderColor: '#fff', borderWidth: 2 },
-  uploadRow: { alignItems: 'center', borderColor: '#d8e6fb', borderRadius: 14, borderWidth: 1, flexDirection: 'row', gap: 8, marginTop: 6, paddingHorizontal: 14, paddingVertical: 13 },
-  uploadRowText: { fontSize: 12, fontWeight: '700' },
-  chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 8 },
-  chip: { borderRadius: 999, borderWidth: 1, paddingHorizontal: 14, paddingVertical: 9 },
-  chipText: { fontSize: 12, fontWeight: '600' },
-  chipTextActive: { fontWeight: '800' },
-  stepperRow: { alignItems: 'center', flexDirection: 'row', gap: 12, marginTop: 14 },
-  stepper: { flexDirection: 'row', gap: 8 },
-  stepperButton: { alignItems: 'center', borderRadius: 12, borderWidth: 1, height: 38, justifyContent: 'center', width: 44 },
-  previewCard: { backgroundColor: '#fff', borderColor: '#d8e6fb', borderRadius: 20, borderWidth: 1, marginBottom: 16, padding: 14 },
-  previewEyebrow: { color: '#64748b', fontSize: 10, fontWeight: '700', letterSpacing: 1.5, marginBottom: 10, textTransform: 'uppercase' },
-  previewBody: { borderRadius: 18, minHeight: 420, overflow: 'hidden', padding: 16 },
-  previewBrandRow: { alignItems: 'center', flexDirection: 'row', gap: 8 },
-  previewBrandMark: { alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: 16, height: 32, justifyContent: 'center', overflow: 'hidden', width: 32 },
+  toggleLabel: { color: colors.text, fontSize: fontSize.section, fontWeight: fontWeight.semibold },
+  toggleSub: { color: colors.textSecondary, fontSize: fontSize.small, lineHeight: lineHeight.compact, marginTop: spacing.xxs },
+  availabilityRow: { alignItems: 'center', flexDirection: 'row', gap: spacing.md },
+  swatchRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.control, marginTop: spacing.control },
+  swatch: { alignItems: 'center', borderRadius: radius.xxl, height: 40, justifyContent: 'center', width: 40 },
+  swatchActive: { borderColor: '#fff', borderWidth: borderWidth.strong },
+  uploadRow: { alignItems: 'center', borderColor: colors.cardBorder, borderRadius: radius.lg, borderWidth: borderWidth.thin, flexDirection: 'row', gap: spacing.sm, marginTop: spacing.compact, paddingHorizontal: spacing.inset, paddingVertical: spacing.md + spacing.hairline },
+  uploadRowText: { fontSize: fontSize.small, fontWeight: fontWeight.bold },
+  chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, marginTop: spacing.sm },
+  chip: { borderRadius: radius.pill, borderWidth: borderWidth.thin, paddingHorizontal: spacing.inset, paddingVertical: spacing.sm + spacing.hairline },
+  chipText: { fontSize: fontSize.small, fontWeight: fontWeight.semibold },
+  chipTextActive: { fontWeight: fontWeight.extrabold },
+  stepperRow: { alignItems: 'center', flexDirection: 'row', gap: spacing.md, marginTop: spacing.inset },
+  stepper: { flexDirection: 'row', gap: spacing.sm },
+  stepperButton: { alignItems: 'center', borderRadius: radius.md, borderWidth: borderWidth.thin, height: 38, justifyContent: 'center', width: 44 },
+  previewCard: { backgroundColor: colors.surface, borderColor: colors.cardBorder, borderRadius: radius.xxl, borderWidth: borderWidth.thin, marginBottom: spacing.lg, padding: spacing.inset },
+  previewEyebrow: { color: colors.textSecondary, fontSize: fontSize.tiny, fontWeight: fontWeight.bold, letterSpacing: 1.5, marginBottom: spacing.control, textTransform: 'uppercase' },
+  previewBody: { borderRadius: radius.xl, minHeight: 420, overflow: 'hidden', padding: spacing.lg },
+  previewBrandRow: { alignItems: 'center', flexDirection: 'row', gap: spacing.sm },
+  previewBrandMark: { alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: radius.control, height: 32, justifyContent: 'center', overflow: 'hidden', width: 32 },
   previewLogo: { height: 32, width: 32 },
-  previewBrandName: { color: '#fff', fontSize: 14, fontWeight: '700' },
-  previewWelcome: { backgroundColor: 'rgba(255,255,255,0.12)', borderColor: 'rgba(255,255,255,0.3)', borderRadius: 16, borderWidth: 1, marginTop: 24, padding: 14 },
-  previewWelcomeTitle: { color: '#fff', fontSize: 18, fontWeight: '800', lineHeight: 23 },
-  previewWelcomeSub: { color: 'rgba(255,255,255,0.8)', fontSize: 12, lineHeight: 17, marginTop: 6 },
-  previewAvatarRow: { flexDirection: 'row', marginTop: 12 },
-  previewAvatar: { alignItems: 'center', borderColor: 'rgba(255,255,255,0.5)', borderRadius: 14, borderWidth: 2, height: 28, justifyContent: 'center', width: 28 },
-  previewAvatarText: { color: '#fff', fontSize: 8, fontWeight: '800' },
-  previewStartRow: { alignItems: 'center', backgroundColor: '#fff', borderRadius: 14, flexDirection: 'row', gap: 10, marginTop: 120, padding: 10 },
-  previewStartIcon: { alignItems: 'center', borderRadius: 20, height: 40, justifyContent: 'center', width: 40 },
-  previewStartTitle: { color: '#0f172a', fontSize: 12, fontWeight: '700' },
-  previewStartSub: { color: '#64748b', fontSize: 10, marginTop: 2 },
-  previewPowered: { color: 'rgba(255,255,255,0.65)', fontSize: 10, marginTop: 14, textAlign: 'center' },
-  previewLauncherRow: { alignItems: 'center', flexDirection: 'row', gap: 8, justifyContent: 'flex-end', marginTop: 12 },
-  previewDesktopLabel: { backgroundColor: '#fff', borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6 },
-  previewDesktopLabelText: { color: '#475569', fontSize: 10, fontWeight: '600' },
+  previewBrandName: { color: colors.primaryText, fontSize: fontSize.section, fontWeight: fontWeight.bold },
+  previewWelcome: { backgroundColor: 'rgba(255,255,255,0.12)', borderColor: 'rgba(255,255,255,0.3)', borderRadius: radius.control, borderWidth: borderWidth.thin, marginTop: spacing.xxl, padding: spacing.inset },
+  previewWelcomeTitle: { color: colors.primaryText, fontSize: fontSize.heading, fontWeight: fontWeight.extrabold, lineHeight: lineHeight.spacious },
+  previewWelcomeSub: { color: 'rgba(255,255,255,0.8)', fontSize: fontSize.small, lineHeight: lineHeight.compact, marginTop: spacing.compact },
+  previewAvatarRow: { flexDirection: 'row', marginTop: spacing.md },
+  previewAvatar: { alignItems: 'center', borderColor: 'rgba(255,255,255,0.5)', borderRadius: radius.lg, borderWidth: borderWidth.strong, height: 28, justifyContent: 'center', width: 28 },
+  previewAvatarText: { color: colors.primaryText, fontSize: fontSize.micro, fontWeight: fontWeight.extrabold },
+  previewStartRow: { alignItems: 'center', backgroundColor: colors.surface, borderRadius: radius.lg, flexDirection: 'row', gap: spacing.control, marginTop: 120, padding: spacing.control },
+  previewStartIcon: { alignItems: 'center', borderRadius: radius.xxl, height: 40, justifyContent: 'center', width: 40 },
+  previewStartTitle: { color: colors.text, fontSize: fontSize.small, fontWeight: fontWeight.bold },
+  previewStartSub: { color: colors.textSecondary, fontSize: fontSize.tiny, marginTop: spacing.xxs },
+  previewPowered: { color: 'rgba(255,255,255,0.65)', fontSize: fontSize.tiny, marginTop: spacing.inset, textAlign: 'center' },
+  previewLauncherRow: { alignItems: 'center', flexDirection: 'row', gap: spacing.sm, justifyContent: 'flex-end', marginTop: spacing.md },
+  previewDesktopLabel: { backgroundColor: colors.surface, borderRadius: radius.pill, paddingHorizontal: spacing.md, paddingVertical: spacing.compact },
+  previewDesktopLabelText: { color: colors.textSecondary, fontSize: fontSize.tiny, fontWeight: fontWeight.semibold },
   previewLauncher: { alignItems: 'center', height: 48, justifyContent: 'center', width: 48 },
   previewLauncherBanner: { width: 112 },
-  previewLauncherBannerText: { color: '#fff', fontSize: 12, fontWeight: '700' },
-  previewEyeCatcher: { backgroundColor: '#ef4444', borderColor: '#fff', borderRadius: 6, borderWidth: 2, height: 12, marginLeft: -16, marginTop: -32, width: 12 },
-  featureList: { gap: 10, marginTop: 14 },
-  featureCard: { alignItems: 'center', borderRadius: 14, borderWidth: 1, flexDirection: 'row', gap: 10, justifyContent: 'space-between', padding: 12 },
-  featureCopy: { alignItems: 'center', flex: 1, flexDirection: 'row', gap: 10, minWidth: 0 },
-  featureIcon: { alignItems: 'center', borderRadius: 10, height: 36, justifyContent: 'center', width: 36 },
-  featureLabel: { fontSize: 14, fontWeight: '600' },
-  comingSoon: { fontSize: 10, fontWeight: '700', marginTop: 2, textTransform: 'uppercase' },
-  editorHead: { alignItems: 'center', flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 },
-  backLink: { paddingVertical: 8 },
-  backLinkText: { fontSize: 13, fontWeight: '700' },
-  doneButton: { alignItems: 'center', backgroundColor: '#2563eb', borderRadius: 12, flexDirection: 'row', gap: 6, paddingHorizontal: 14, paddingVertical: 10 },
-  doneButtonText: { color: '#fff', fontSize: 13, fontWeight: '700' },
-  formFieldCard: { borderRadius: 14, borderWidth: 1, marginTop: 10, padding: 12 },
-  formFieldRow: { alignItems: 'center', flexDirection: 'row', gap: 8 },
-  formFieldLabelInput: { borderBottomWidth: 1, flex: 1, fontSize: 14, fontWeight: '600', minWidth: 0, paddingVertical: 6 },
-  formFieldTypeButton: { alignItems: 'center', borderRadius: 10, borderWidth: 1, flexDirection: 'row', gap: 4, paddingHorizontal: 10, paddingVertical: 8 },
-  formFieldTypeText: { fontSize: 12, fontWeight: '700' },
-  formFieldToggles: { alignItems: 'center', flexDirection: 'row', gap: 14, marginTop: 10 },
-  formFieldToggle: { alignItems: 'center', flexDirection: 'row', gap: 6 },
-  formFieldToggleLabel: { fontSize: 12 },
-  lockedHint: { color: '#94a3b8', fontSize: 11, marginTop: 8 },
-  addFieldButton: { alignItems: 'center', borderRadius: 14, borderStyle: 'dashed', borderWidth: 1, flexDirection: 'row', gap: 6, justifyContent: 'center', marginTop: 10, paddingVertical: 12 },
-  addFieldText: { fontSize: 13, fontWeight: '700' },
-  formPreviewName: { fontSize: 15, fontWeight: '800', marginTop: 4 },
-  formPreviewField: { marginTop: 12 },
-  formPreviewLabel: { fontSize: 12, fontWeight: '600' },
-  formPreviewBox: { borderRadius: 10, borderWidth: 1, height: 40, marginTop: 6 },
-  formPreviewStars: { color: '#f59e0b', fontSize: 20, letterSpacing: 2, marginTop: 6 },
-  formPreviewSubmit: { alignItems: 'center', borderRadius: 12, marginTop: 14, paddingVertical: 12 },
-  formPreviewSubmitText: { color: '#fff', fontSize: 13, fontWeight: '700' },
-  formCard: { borderRadius: 14, borderWidth: 1, marginTop: 12, padding: 14 },
-  formCardHead: { alignItems: 'center', flexDirection: 'row', gap: 10 },
-  formCardEyebrow: { fontSize: 10, fontWeight: '700', textTransform: 'uppercase' },
-  formCardName: { fontSize: 15, fontWeight: '800', marginTop: 2 },
-  formCardDesc: { fontSize: 12, lineHeight: 18, marginTop: 8 },
-  formCardFoot: { alignItems: 'center', flexDirection: 'row', justifyContent: 'space-between', marginTop: 12 },
-  formCardCount: { fontSize: 12 },
-  editFormButton: { alignItems: 'center', borderRadius: 10, borderWidth: 1, flexDirection: 'row', gap: 5, paddingHorizontal: 12, paddingVertical: 8 },
-  editFormText: { fontSize: 12, fontWeight: '700' },
-  modalBackdrop: { backgroundColor: 'rgba(15,23,42,0.45)', flex: 1, justifyContent: 'center', padding: 24 },
-  modalSheet: { backgroundColor: '#fff', borderRadius: 22, padding: 18 },
-  modalTitle: { color: '#0f172a', fontSize: 16, fontWeight: '700', marginBottom: 8 },
-  modalRow: { paddingVertical: 12 },
-  modalRowText: { fontSize: 14 },
-  snippetBox: { borderRadius: 12, borderWidth: 1, marginTop: 12, maxHeight: 260, padding: 12 },
-  snippetText: { fontFamily: 'monospace', fontSize: 12, lineHeight: 19 },
-});
+  previewLauncherBannerText: { color: colors.primaryText, fontSize: fontSize.small, fontWeight: fontWeight.bold },
+  previewEyeCatcher: { backgroundColor: colors.error, borderColor: '#fff', borderRadius: radius.compact, borderWidth: borderWidth.strong, height: 12, marginLeft: -16, marginTop: -32, width: 12 },
+  featureList: { gap: spacing.control, marginTop: spacing.inset },
+  featureCard: { alignItems: 'center', borderRadius: radius.lg, borderWidth: borderWidth.thin, flexDirection: 'row', gap: spacing.control, justifyContent: 'space-between', padding: spacing.md },
+  featureCopy: { alignItems: 'center', flex: 1, flexDirection: 'row', gap: spacing.control, minWidth: 0 },
+  featureIcon: { alignItems: 'center', borderRadius: radius.inset, height: 36, justifyContent: 'center', width: 36 },
+  featureLabel: { fontSize: fontSize.section, fontWeight: fontWeight.semibold },
+  comingSoon: { fontSize: fontSize.tiny, fontWeight: fontWeight.bold, marginTop: spacing.xxs, textTransform: 'uppercase' },
+  editorHead: { alignItems: 'center', flexDirection: 'row', justifyContent: 'space-between', marginBottom: spacing.md },
+  backLink: { paddingVertical: spacing.sm },
+  backLinkText: { fontSize: fontSize.caption, fontWeight: fontWeight.bold },
+  doneButton: { alignItems: 'center', backgroundColor: colors.primary, borderRadius: radius.md, flexDirection: 'row', gap: spacing.compact, paddingHorizontal: spacing.inset, paddingVertical: spacing.control },
+  doneButtonText: { color: colors.primaryText, fontSize: fontSize.caption, fontWeight: fontWeight.bold },
+  formFieldCard: { borderRadius: radius.lg, borderWidth: borderWidth.thin, marginTop: spacing.control, padding: spacing.md },
+  formFieldRow: { alignItems: 'center', flexDirection: 'row', gap: spacing.sm },
+  formFieldLabelInput: { borderBottomWidth: borderWidth.thin, flex: 1, fontSize: fontSize.section, fontWeight: fontWeight.semibold, minWidth: 0, paddingVertical: spacing.compact },
+  formFieldTypeButton: { alignItems: 'center', borderRadius: radius.inset, borderWidth: borderWidth.thin, flexDirection: 'row', gap: spacing.xs, paddingHorizontal: spacing.control, paddingVertical: spacing.sm },
+  formFieldTypeText: { fontSize: fontSize.small, fontWeight: fontWeight.bold },
+  formFieldToggles: { alignItems: 'center', flexDirection: 'row', gap: spacing.inset, marginTop: spacing.control },
+  formFieldToggle: { alignItems: 'center', flexDirection: 'row', gap: spacing.compact },
+  formFieldToggleLabel: { fontSize: fontSize.small },
+  lockedHint: { color: colors.textMuted, fontSize: fontSize.compact, marginTop: spacing.sm },
+  addFieldButton: { alignItems: 'center', borderRadius: radius.lg, borderStyle: 'dashed', borderWidth: borderWidth.thin, flexDirection: 'row', gap: spacing.compact, justifyContent: 'center', marginTop: spacing.control, paddingVertical: spacing.md },
+  addFieldText: { fontSize: fontSize.caption, fontWeight: fontWeight.bold },
+  formPreviewName: { fontSize: fontSize.body, fontWeight: fontWeight.extrabold, marginTop: spacing.xs },
+  formPreviewField: { marginTop: spacing.md },
+  formPreviewLabel: { fontSize: fontSize.small, fontWeight: fontWeight.semibold },
+  formPreviewBox: { borderRadius: radius.inset, borderWidth: borderWidth.thin, height: 40, marginTop: spacing.compact },
+  formPreviewStars: { color: colors.warning, fontSize: fontSize.sectionTitle, letterSpacing: 2, marginTop: spacing.compact },
+  formPreviewSubmit: { alignItems: 'center', borderRadius: radius.md, marginTop: spacing.inset, paddingVertical: spacing.md },
+  formPreviewSubmitText: { color: colors.primaryText, fontSize: fontSize.caption, fontWeight: fontWeight.bold },
+  formCard: { borderRadius: radius.lg, borderWidth: borderWidth.thin, marginTop: spacing.md, padding: spacing.inset },
+  formCardHead: { alignItems: 'center', flexDirection: 'row', gap: spacing.control },
+  formCardEyebrow: { fontSize: fontSize.tiny, fontWeight: fontWeight.bold, textTransform: 'uppercase' },
+  formCardName: { fontSize: fontSize.body, fontWeight: fontWeight.extrabold, marginTop: spacing.xxs },
+  formCardDesc: { fontSize: fontSize.small, lineHeight: lineHeight.caption, marginTop: spacing.sm },
+  formCardFoot: { alignItems: 'center', flexDirection: 'row', justifyContent: 'space-between', marginTop: spacing.md },
+  formCardCount: { fontSize: fontSize.small },
+  editFormButton: { alignItems: 'center', borderRadius: radius.inset, borderWidth: borderWidth.thin, flexDirection: 'row', gap: spacing.xs + spacing.hairline, paddingHorizontal: spacing.md, paddingVertical: spacing.sm },
+  editFormText: { fontSize: fontSize.small, fontWeight: fontWeight.bold },
+  modalBackdrop: { backgroundColor: 'rgba(15,23,42,0.45)', flex: 1, justifyContent: 'center', padding: spacing.xxl },
+  modalSheet: { backgroundColor: colors.surface, borderRadius: radius.panel, padding: spacing.roomy },
+  modalTitle: { color: colors.text, fontSize: fontSize.subheading, fontWeight: fontWeight.bold, marginBottom: spacing.sm },
+  modalRow: { paddingVertical: spacing.md },
+  modalRowText: { fontSize: fontSize.section },
+  snippetBox: { borderRadius: radius.md, borderWidth: borderWidth.thin, marginTop: spacing.md, maxHeight: 260, padding: spacing.md },
+  snippetText: { fontFamily: 'monospace', fontSize: fontSize.small, lineHeight: lineHeight.control },
+}));

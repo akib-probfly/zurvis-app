@@ -1,3 +1,4 @@
+import { createThemedStyles } from '../theme/createThemedStyles';
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as DocumentPicker from 'expo-document-picker';
@@ -49,7 +50,7 @@ import { ColorfulAvatar } from '../components/ColorfulAvatar';
 import { ErrorState } from '../components/ErrorState';
 import { NotificationBell, NotificationCenter } from '../components/NotificationCenter';
 import { useTheme } from '../theme/ThemeContext';
-import { chipSize, fontSize, fontWeight, radius, spacing } from '../theme/tokens';
+import { borderWidth, chipSize, fontSize, fontWeight, letterSpacing, lineHeight, radius, spacing } from '../theme/tokens';
 import { groupChannelsByType } from '../lib/channel-filter-groups';
 import { getCountryFlag } from '../lib/countryFromPhone';
 import type { ContactsStackParamList } from '../navigation/ContactsStack';
@@ -102,6 +103,7 @@ export function ContactsScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<ContactsStackParamList>>();
   const queryClient = useQueryClient();
   const { colors } = useTheme();
+  const styles = createStyles(colors);
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [notificationsOpen, setNotificationsOpen] = useState(false);
@@ -623,7 +625,7 @@ export function ContactsScreen() {
               }
             />
           )}
-          ListFooterComponent={contactsQuery.isFetchingNextPage ? <View style={{ alignItems: 'center', marginVertical: 16 }}><InlineSkeleton width={140} height={14} /></View> : undefined}
+          ListFooterComponent={contactsQuery.isFetchingNextPage ? <View style={{ alignItems: 'center', marginVertical: spacing.lg }}><InlineSkeleton width={140} height={14} /></View> : undefined}
           renderItem={renderContactRow}
           extraData={navigation}
         />
@@ -971,6 +973,7 @@ export function ContactsScreen() {
 
 const ContactRow = memo(function ContactRow({ contact, navigation }: { contact: CrmContactListItem; navigation: any }) {
   const { colors } = useTheme();
+  const styles = createStyles(colors);
   const title = getContactTitle(contact);
   const phone = formatPhoneNumberDisplay(contact.primaryPhone);
   const tags = (contact.tags ?? []).filter((tag) => !tag.isArchived).slice(0, 2);
@@ -1048,6 +1051,7 @@ function ActionRow({
   onPress?: () => void;
 }) {
   const { colors } = useTheme();
+  const styles = createStyles(colors);
   const color = destructive ? colors.error : disabled ? colors.textMuted : colors.text;
 
   return (
@@ -1064,6 +1068,7 @@ function ActionRow({
 
 function ContactsExportProgressCard({ job }: { job: CrmExportJob | null }) {
   const { colors } = useTheme();
+  const styles = createStyles(colors);
   if (!job || (job.status !== 'PENDING' && job.status !== 'PROCESSING')) return null;
 
   const totalRows = Math.max(job.totalRows, 0);
@@ -1126,6 +1131,7 @@ function ContactsExportDownloads({
   onDownload: (job: CrmExportJob) => void;
 }) {
   const { colors } = useTheme();
+  const styles = createStyles(colors);
   if (!job) return null;
 
   return (
@@ -1158,140 +1164,140 @@ function ContactsExportDownloads({
   );
 }
 
-const styles = StyleSheet.create({
-  screen: { backgroundColor: '#eef4fb', flex: 1 },
-  topbar: { alignItems: 'center', backgroundColor: '#fff', borderBottomColor: '#e8eef7', borderBottomWidth: 1, flexDirection: 'row', justifyContent: 'space-between', paddingBottom: 14, paddingHorizontal: 18 },
-  topbarCopy: { flex: 1, minWidth: 0, paddingRight: 12 },
-  topbarActions: { alignItems: 'center', flexDirection: 'row', gap: 10 },
-  title: { color: '#0f172a', fontSize: 24, fontWeight: '800' },
-  subtitle: { color: '#64748b', fontSize: 13, marginTop: 4 },
-  addButton: { alignItems: 'center', backgroundColor: '#2563eb', borderRadius: 18, height: 36, justifyContent: 'center', width: 36 },
-  iconButton: { alignItems: 'center', borderColor: '#d8e6fb', borderRadius: 18, borderWidth: 1, height: 36, justifyContent: 'center', width: 36 },
-  searchRow: { alignItems: 'center', flexDirection: 'row', gap: 10, marginHorizontal: 16, marginTop: 16 },
-  filterButton: { alignItems: 'center', backgroundColor: '#fff', borderColor: '#cfe0fa', borderRadius: 18, borderWidth: 1, height: 44, justifyContent: 'center', position: 'relative', width: 44 },
-  filterButtonActive: { borderColor: '#2563eb' },
-  filterDot: { backgroundColor: '#2563eb', borderRadius: 4, height: 8, position: 'absolute', right: 8, top: 8, width: 8 },
-  countLabel: { color: '#64748b', fontSize: 12, fontWeight: '600', marginHorizontal: 18, marginTop: 12 },
-  progressCard: { borderColor: '#315efb', borderRadius: 18, borderWidth: 1, marginHorizontal: 16, marginTop: 12, padding: 14 },
-  progressTop: { alignItems: 'flex-start', flexDirection: 'row', gap: 12, justifyContent: 'space-between' },
-  progressCopyRow: { flex: 1, flexDirection: 'row', gap: 10, minWidth: 0 },
-  progressIcon: { alignItems: 'center', backgroundColor: '#e8f0ff', borderRadius: 12, height: 36, justifyContent: 'center', width: 36 },
+const createStyles = createThemedStyles((colors) => StyleSheet.create({
+  screen: { backgroundColor: colors.background, flex: 1 },
+  topbar: { alignItems: 'center', backgroundColor: colors.surface, borderBottomColor: colors.separator, borderBottomWidth: borderWidth.thin, flexDirection: 'row', justifyContent: 'space-between', paddingBottom: spacing.inset, paddingHorizontal: spacing.roomy },
+  topbarCopy: { flex: 1, minWidth: 0, paddingRight: spacing.md },
+  topbarActions: { alignItems: 'center', flexDirection: 'row', gap: spacing.control },
+  title: { color: colors.text, fontSize: fontSize.title, fontWeight: fontWeight.extrabold },
+  subtitle: { color: colors.textSecondary, fontSize: fontSize.caption, marginTop: spacing.xs },
+  addButton: { alignItems: 'center', backgroundColor: colors.primary, borderRadius: radius.xl, height: 36, justifyContent: 'center', width: 36 },
+  iconButton: { alignItems: 'center', borderColor: colors.cardBorder, borderRadius: radius.xl, borderWidth: borderWidth.thin, height: 36, justifyContent: 'center', width: 36 },
+  searchRow: { alignItems: 'center', flexDirection: 'row', gap: spacing.control, marginHorizontal: spacing.lg, marginTop: spacing.lg },
+  filterButton: { alignItems: 'center', backgroundColor: colors.surface, borderColor: colors.cardBorder, borderRadius: radius.xl, borderWidth: borderWidth.thin, height: 44, justifyContent: 'center', position: 'relative', width: 44 },
+  filterButtonActive: { borderColor: colors.primary },
+  filterDot: { backgroundColor: colors.primary, borderRadius: radius.xs, height: 8, position: 'absolute', right: 8, top: 8, width: 8 },
+  countLabel: { color: colors.textSecondary, fontSize: fontSize.small, fontWeight: fontWeight.semibold, marginHorizontal: spacing.roomy, marginTop: spacing.md },
+  progressCard: { borderColor: colors.primary, borderRadius: radius.xl, borderWidth: borderWidth.thin, marginHorizontal: spacing.lg, marginTop: spacing.md, padding: spacing.inset },
+  progressTop: { alignItems: 'flex-start', flexDirection: 'row', gap: spacing.md, justifyContent: 'space-between' },
+  progressCopyRow: { flex: 1, flexDirection: 'row', gap: spacing.control, minWidth: 0 },
+  progressIcon: { alignItems: 'center', backgroundColor: colors.primarySoft, borderRadius: radius.md, height: 36, justifyContent: 'center', width: 36 },
   progressCopy: { flex: 1, minWidth: 0 },
-  progressTitleRow: { alignItems: 'center', flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
-  progressTitle: { color: '#0f172a', fontSize: 14, fontWeight: '800' },
-  progressBadge: { backgroundColor: '#f1f5f9', borderRadius: 999, paddingHorizontal: 8, paddingVertical: 3 },
-  progressBadgeText: { color: '#64748b', fontSize: 9, fontWeight: '800', textTransform: 'uppercase' },
-  progressDetail: { color: '#64748b', fontSize: 13, lineHeight: 18, marginTop: 5 },
+  progressTitleRow: { alignItems: 'center', flexDirection: 'row', flexWrap: 'wrap', gap: spacing.compact },
+  progressTitle: { color: colors.text, fontSize: fontSize.section, fontWeight: fontWeight.extrabold },
+  progressBadge: { backgroundColor: colors.surfaceSecondary, borderRadius: radius.pill, paddingHorizontal: spacing.sm, paddingVertical: spacing.tight },
+  progressBadgeText: { color: colors.textSecondary, fontSize: fontSize.badge, fontWeight: fontWeight.extrabold, textTransform: 'uppercase' },
+  progressDetail: { color: colors.textSecondary, fontSize: fontSize.caption, lineHeight: lineHeight.caption, marginTop: spacing.xs + spacing.hairline },
   progressPercentWrap: { alignItems: 'flex-end', minWidth: 64 },
-  progressPercent: { color: '#0f172a', fontSize: 22, fontWeight: '800' },
-  progressState: { color: '#64748b', fontSize: 11, marginTop: 1 },
-  progressTrack: { backgroundColor: '#e8eefb', borderRadius: 999, height: 7, marginTop: 14, overflow: 'hidden' },
-  progressFill: { backgroundColor: '#315efb', borderRadius: 999, height: '100%' },
-  progressHint: { color: '#64748b', fontSize: 12, lineHeight: 17, marginTop: 9 },
-  downloadsSection: { marginHorizontal: 16, marginTop: 10 },
-  downloadCard: { borderColor: '#d8e6fb', borderRadius: 16, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 10 },
-  downloadTop: { alignItems: 'center', flexDirection: 'row', gap: 9 },
-  downloadIcon: { alignItems: 'center', backgroundColor: '#cffafe', borderRadius: 14, height: 32, justifyContent: 'center', width: 32 },
+  progressPercent: { color: colors.text, fontSize: fontSize.headingLarge, fontWeight: fontWeight.extrabold },
+  progressState: { color: colors.textSecondary, fontSize: fontSize.compact, marginTop: spacing.hairline },
+  progressTrack: { backgroundColor: colors.surfaceSecondary, borderRadius: radius.pill, height: 7, marginTop: spacing.inset, overflow: 'hidden' },
+  progressFill: { backgroundColor: colors.primary, borderRadius: radius.pill, height: '100%' },
+  progressHint: { color: colors.textSecondary, fontSize: fontSize.small, lineHeight: lineHeight.compact, marginTop: spacing.sm + spacing.hairline },
+  downloadsSection: { marginHorizontal: spacing.lg, marginTop: spacing.control },
+  downloadCard: { borderColor: colors.cardBorder, borderRadius: radius.control, borderWidth: borderWidth.thin, paddingHorizontal: spacing.md, paddingVertical: spacing.control },
+  downloadTop: { alignItems: 'center', flexDirection: 'row', gap: spacing.sm + spacing.hairline },
+  downloadIcon: { alignItems: 'center', backgroundColor: colors.infoSoft, borderRadius: radius.lg, height: 32, justifyContent: 'center', width: 32 },
   downloadCopy: { flex: 1, minWidth: 0 },
-  downloadTitle: { color: '#0f172a', fontSize: 13, fontWeight: '800' },
-  downloadMeta: { color: '#64748b', fontSize: 11, lineHeight: 15, marginTop: 2 },
-  downloadButton: { alignItems: 'center', borderColor: '#a5f3fc', borderRadius: 999, borderWidth: 1, flexDirection: 'row', gap: 5, paddingHorizontal: 10, paddingVertical: 6 },
-  downloadButtonText: { color: '#0891b2', fontSize: 12, fontWeight: '800' },
+  downloadTitle: { color: colors.text, fontSize: fontSize.caption, fontWeight: fontWeight.extrabold },
+  downloadMeta: { color: colors.textSecondary, fontSize: fontSize.compact, lineHeight: lineHeight.micro, marginTop: spacing.xxs },
+  downloadButton: { alignItems: 'center', borderColor: colors.infoBorder, borderRadius: radius.pill, borderWidth: borderWidth.thin, flexDirection: 'row', gap: spacing.xs + spacing.hairline, paddingHorizontal: spacing.control, paddingVertical: spacing.compact },
+  downloadButtonText: { color: colors.info, fontSize: fontSize.small, fontWeight: fontWeight.extrabold },
   downloadDismiss: { alignItems: 'center', height: 28, justifyContent: 'center', width: 24 },
   listFill: { flex: 1 },
-  list: { gap: 8, paddingBottom: 24, paddingHorizontal: 16, paddingTop: 12 },
-  card: { alignItems: 'flex-start', borderRadius: 18, borderWidth: 1, flexDirection: 'row', gap: 10, padding: 10 },
-  avatar: { alignItems: 'center', borderRadius: 24, borderWidth: 2, height: 48, justifyContent: 'center', position: 'relative', width: 48 },
-  avatarImage: { borderRadius: 24, height: 48, width: 48 },
-  avatarText: { color: '#1d4ed8', fontSize: 15, fontWeight: '700' },
-  channelBadge: { borderColor: '#fff', borderRadius: 10, borderWidth: 2, bottom: -2, overflow: 'hidden', position: 'absolute', right: -2 },
+  list: { gap: spacing.sm, paddingBottom: spacing.xxl, paddingHorizontal: spacing.lg, paddingTop: spacing.md },
+  card: { alignItems: 'flex-start', borderRadius: radius.xl, borderWidth: borderWidth.thin, flexDirection: 'row', gap: spacing.control, padding: spacing.control },
+  avatar: { alignItems: 'center', borderRadius: radius.xxxl, borderWidth: borderWidth.strong, height: 48, justifyContent: 'center', position: 'relative', width: 48 },
+  avatarImage: { borderRadius: radius.xxxl, height: 48, width: 48 },
+  avatarText: { color: colors.primary, fontSize: fontSize.body, fontWeight: fontWeight.bold },
+  channelBadge: { borderColor: '#fff', borderRadius: radius.inset, borderWidth: borderWidth.strong, bottom: -2, overflow: 'hidden', position: 'absolute', right: -2 },
   copy: { flex: 1, minWidth: 0 },
-  contactHeading: { alignItems: 'center', flexDirection: 'row', gap: 6, justifyContent: 'space-between', minWidth: 0 },
-  name: { color: '#0f172a', flex: 1, fontSize: 15, fontWeight: '700', letterSpacing: -0.15, minWidth: 0 },
-  contactMethods: { alignItems: 'center', flexDirection: 'row', gap: 10, marginTop: 4 },
-  metaRow: { alignItems: 'center', flex: 1, flexDirection: 'row', gap: 5, minHeight: 15, minWidth: 0 },
-  metaText: { color: '#64748b', flex: 1, fontSize: 11, minWidth: 0 },
-  footerBadges: { alignItems: 'center', flexDirection: 'row', flexWrap: 'wrap', gap: 5, marginTop: 6 },
-  channelPill: { alignSelf: 'flex-start', borderRadius: 999, borderWidth: 1, paddingHorizontal: 8, paddingVertical: 3 },
-  channelPillText: { color: '#9a3412', fontSize: 10, fontWeight: '600' },
-  tagRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 5 },
-  tagChip: { borderRadius: 999, borderWidth: 1, paddingHorizontal: 7, paddingVertical: 2 },
-  tagChipText: { fontSize: 10, fontWeight: '600' },
-  tagMore: { alignSelf: 'center', color: '#64748b', fontSize: 11, fontWeight: '600' },
-  activity: { color: '#94a3b8', flexShrink: 0, fontSize: 10, fontWeight: '600' },
-  emptyClearButton: { backgroundColor: '#eff6ff', borderRadius: 12, marginTop: 14, paddingHorizontal: 14, paddingVertical: 10 },
-  emptyClearButtonText: { color: '#2563eb', fontSize: 13, fontWeight: '700' },
+  contactHeading: { alignItems: 'center', flexDirection: 'row', gap: spacing.compact, justifyContent: 'space-between', minWidth: 0 },
+  name: { color: colors.text, flex: 1, fontSize: fontSize.body, fontWeight: fontWeight.bold, letterSpacing: -0.15, minWidth: 0 },
+  contactMethods: { alignItems: 'center', flexDirection: 'row', gap: spacing.control, marginTop: spacing.xs },
+  metaRow: { alignItems: 'center', flex: 1, flexDirection: 'row', gap: spacing.xs + spacing.hairline, minHeight: 15, minWidth: 0 },
+  metaText: { color: colors.textSecondary, flex: 1, fontSize: fontSize.compact, minWidth: 0 },
+  footerBadges: { alignItems: 'center', flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs + spacing.hairline, marginTop: spacing.compact },
+  channelPill: { alignSelf: 'flex-start', borderRadius: radius.pill, borderWidth: borderWidth.thin, paddingHorizontal: spacing.sm, paddingVertical: spacing.tight },
+  channelPillText: { color: colors.warning, fontSize: fontSize.tiny, fontWeight: fontWeight.semibold },
+  tagRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs + spacing.hairline },
+  tagChip: { borderRadius: radius.pill, borderWidth: borderWidth.thin, paddingHorizontal: spacing.compact + spacing.hairline, paddingVertical: spacing.xxs },
+  tagChipText: { fontSize: fontSize.tiny, fontWeight: fontWeight.semibold },
+  tagMore: { alignSelf: 'center', color: colors.textSecondary, fontSize: fontSize.compact, fontWeight: fontWeight.semibold },
+  activity: { color: colors.textMuted, flexShrink: 0, fontSize: fontSize.tiny, fontWeight: fontWeight.semibold },
+  emptyClearButton: { backgroundColor: colors.primarySoft, borderRadius: radius.md, marginTop: spacing.inset, paddingHorizontal: spacing.inset, paddingVertical: spacing.control },
+  emptyClearButtonText: { color: colors.primary, fontSize: fontSize.caption, fontWeight: fontWeight.bold },
   loader: { marginTop: 60 },
   sheetOverlay: { backgroundColor: 'rgba(15,23,42,0.45)', flex: 1, justifyContent: 'flex-end' },
-  sheetSurface: { paddingBottom: 20, paddingHorizontal: 20, paddingTop: 8 },
-  actionsSheet: { paddingBottom: 24, paddingHorizontal: 20, paddingTop: 8 },
-  sheetHeader: { alignItems: 'center', flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 },
-  sheetTitle: { color: '#0f172a', fontSize: 18, fontWeight: '800' },
-  actionList: { gap: 4 },
-  actionRow: { alignItems: 'center', borderRadius: 14, flexDirection: 'row', gap: 12, minHeight: 44, paddingHorizontal: 12, paddingVertical: 10 },
+  sheetSurface: { paddingBottom: spacing.xl, paddingHorizontal: spacing.xl, paddingTop: spacing.sm },
+  actionsSheet: { paddingBottom: spacing.xxl, paddingHorizontal: spacing.xl, paddingTop: spacing.sm },
+  sheetHeader: { alignItems: 'center', flexDirection: 'row', justifyContent: 'space-between', marginBottom: spacing.md },
+  sheetTitle: { color: colors.text, fontSize: fontSize.heading, fontWeight: fontWeight.extrabold },
+  actionList: { gap: spacing.xs },
+  actionRow: { alignItems: 'center', borderRadius: radius.lg, flexDirection: 'row', gap: spacing.md, minHeight: 44, paddingHorizontal: spacing.md, paddingVertical: spacing.control },
   actionRowDisabled: { opacity: 0.48 },
-  actionLabel: { color: '#0f172a', flex: 1, fontSize: 14, fontWeight: '700' },
-  actionDivider: { backgroundColor: '#e2e8f0', height: 1, marginVertical: 6 },
-  layerTabs: { backgroundColor: '#f1f5f9', borderRadius: 14, flexDirection: 'row', gap: 4, marginBottom: 12, padding: 4 },
-  layerTab: { alignItems: 'center', borderRadius: 10, flex: 1, paddingVertical: 8 },
-  layerTabActive: { backgroundColor: '#fff', elevation: 1, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 4 },
-  layerTabText: { color: '#64748b', fontSize: 11, fontWeight: '600' },
-  layerTabTextActive: { color: '#0f172a', fontWeight: '700' },
-  optionList: { gap: 6, maxHeight: 400 },
-  optionRow: { alignItems: 'center', borderRadius: 12, flexDirection: 'row', gap: 10, paddingHorizontal: 10, paddingVertical: 10 },
-  optionRowActive: { backgroundColor: '#dbeafe' },
-  optionText: { color: '#334155', flex: 1, fontSize: 14, fontWeight: '500' },
-  optionTextActive: { color: '#1d4ed8', fontWeight: '700' },
+  actionLabel: { color: colors.text, flex: 1, fontSize: fontSize.section, fontWeight: fontWeight.bold },
+  actionDivider: { backgroundColor: colors.surfaceSecondary, height: 1, marginVertical: spacing.compact },
+  layerTabs: { backgroundColor: colors.surfaceSecondary, borderRadius: radius.lg, flexDirection: 'row', gap: spacing.xs, marginBottom: spacing.md, padding: spacing.xs },
+  layerTab: { alignItems: 'center', borderRadius: radius.inset, flex: 1, paddingVertical: spacing.sm },
+  layerTabActive: { backgroundColor: colors.surface, elevation: 1, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 4 },
+  layerTabText: { color: colors.textSecondary, fontSize: fontSize.compact, fontWeight: fontWeight.semibold },
+  layerTabTextActive: { color: colors.text, fontWeight: fontWeight.bold },
+  optionList: { gap: spacing.compact, maxHeight: 400 },
+  optionRow: { alignItems: 'center', borderRadius: radius.md, flexDirection: 'row', gap: spacing.control, paddingHorizontal: spacing.control, paddingVertical: spacing.control },
+  optionRowActive: { backgroundColor: colors.primarySoft },
+  optionText: { color: colors.text, flex: 1, fontSize: fontSize.section, fontWeight: fontWeight.medium },
+  optionTextActive: { color: colors.primary, fontWeight: fontWeight.bold },
   selectedTagCount: { fontSize: fontSize.small, marginVertical: spacing.sm },
   tagCloud: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
-  tagPill: { alignItems: 'center', borderRadius: radius.pill, borderWidth: 1, flexDirection: 'row', gap: spacing.sm - 2, maxWidth: '100%', ...chipSize.compact },
-  tagPillActive: { borderWidth: 1.5 },
-  tagPillDot: { borderRadius: 4, height: 8, width: 8 },
+  tagPill: { alignItems: 'center', borderRadius: radius.pill, borderWidth: borderWidth.thin, flexDirection: 'row', gap: spacing.sm - 2, maxWidth: '100%', ...chipSize.compact },
+  tagPillActive: { borderWidth: borderWidth.selected },
+  tagPillDot: { borderRadius: radius.xs, height: 8, width: 8 },
   tagPillText: { flexShrink: 1, fontSize: fontSize.caption, fontWeight: fontWeight.medium },
   tagPillTextActive: { fontWeight: fontWeight.bold },
-  emptyHint: { color: '#94a3b8', fontSize: 13, paddingVertical: 12 },
-  countryHint: { fontSize: 12, lineHeight: 18, marginBottom: 10 },
-  countryChipList: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 10 },
-  countryChip: { alignItems: 'center', borderRadius: 999, borderWidth: 1, flexDirection: 'row', gap: 5, maxWidth: '100%', paddingHorizontal: 9, paddingVertical: 6 },
-  countryChipText: { flexShrink: 1, fontSize: 11, fontWeight: '600' },
-  countryFlag: { fontSize: 16 },
-  countrySelectedCount: { fontSize: 12, marginBottom: 8 },
-  countryOptions: { gap: 6 },
-  countryOption: { alignItems: 'center', borderRadius: 13, borderWidth: 1, flexDirection: 'row', gap: 10, paddingHorizontal: 10, paddingVertical: 9 },
-  countryOptionActive: { borderWidth: 1.5 },
-  countryOptionName: { flex: 1, fontSize: 13, fontWeight: '600' },
-  countryOptionDialCode: { fontSize: 11 },
-  inlineSearch: { alignItems: 'center', backgroundColor: '#f8fafc', borderColor: '#e2e8f0', borderRadius: 12, borderWidth: 1, flexDirection: 'row', marginBottom: 8, paddingHorizontal: 10 },
-  inlineSearchInput: { color: '#17233a', flex: 1, height: 40, marginLeft: 8 },
-  sectionLabel: { color: '#64748b', fontSize: 12, fontWeight: '700', letterSpacing: 0.4, marginBottom: 8, textTransform: 'uppercase' },
-  sectionLabelSpaced: { marginTop: 14 },
-  segment: { backgroundColor: '#f1f5f9', borderRadius: 20, flexDirection: 'row', marginBottom: 12, padding: 4 },
-  segmentOption: { alignItems: 'center', borderRadius: 16, flex: 1, flexDirection: 'row', gap: 4, justifyContent: 'center', paddingVertical: 8 },
-  segmentOptionActive: { backgroundColor: '#fff', elevation: 1, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 4 },
-  segmentText: { color: '#64748b', fontSize: 12, fontWeight: '600' },
-  segmentTextActive: { color: '#0f172a', fontWeight: '700' },
-  switchRow: { alignItems: 'center', borderColor: '#dbeafe', borderRadius: 16, borderWidth: 1, flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 12, paddingVertical: 12 },
-  switchRowSpaced: { marginTop: 8 },
-  switchLabel: { color: '#334155', fontSize: 14, fontWeight: '600' },
-  resetButton: { alignItems: 'center', marginTop: 14, paddingVertical: 6 },
+  emptyHint: { color: colors.textMuted, fontSize: fontSize.caption, paddingVertical: spacing.md },
+  countryHint: { fontSize: fontSize.small, lineHeight: lineHeight.caption, marginBottom: spacing.control },
+  countryChipList: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.compact, marginBottom: spacing.control },
+  countryChip: { alignItems: 'center', borderRadius: radius.pill, borderWidth: borderWidth.thin, flexDirection: 'row', gap: spacing.xs + spacing.hairline, maxWidth: '100%', paddingHorizontal: spacing.sm + spacing.hairline, paddingVertical: spacing.compact },
+  countryChipText: { flexShrink: 1, fontSize: fontSize.compact, fontWeight: fontWeight.semibold },
+  countryFlag: { fontSize: fontSize.subheading },
+  countrySelectedCount: { fontSize: fontSize.small, marginBottom: spacing.sm },
+  countryOptions: { gap: spacing.compact },
+  countryOption: { alignItems: 'center', borderRadius: radius.chip, borderWidth: borderWidth.thin, flexDirection: 'row', gap: spacing.control, paddingHorizontal: spacing.control, paddingVertical: spacing.sm + spacing.hairline },
+  countryOptionActive: { borderWidth: borderWidth.selected },
+  countryOptionName: { flex: 1, fontSize: fontSize.caption, fontWeight: fontWeight.semibold },
+  countryOptionDialCode: { fontSize: fontSize.compact },
+  inlineSearch: { alignItems: 'center', backgroundColor: colors.background, borderColor: colors.inputBorder, borderRadius: radius.md, borderWidth: borderWidth.thin, flexDirection: 'row', marginBottom: spacing.sm, paddingHorizontal: spacing.control },
+  inlineSearchInput: { color: colors.text, flex: 1, height: 40, marginLeft: spacing.sm },
+  sectionLabel: { color: colors.textSecondary, fontSize: fontSize.small, fontWeight: fontWeight.bold, letterSpacing: letterSpacing.wide, marginBottom: spacing.sm, textTransform: 'uppercase' },
+  sectionLabelSpaced: { marginTop: spacing.inset },
+  segment: { backgroundColor: colors.surfaceSecondary, borderRadius: radius.xxl, flexDirection: 'row', marginBottom: spacing.md, padding: spacing.xs },
+  segmentOption: { alignItems: 'center', borderRadius: radius.control, flex: 1, flexDirection: 'row', gap: spacing.xs, justifyContent: 'center', paddingVertical: spacing.sm },
+  segmentOptionActive: { backgroundColor: colors.surface, elevation: 1, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 4 },
+  segmentText: { color: colors.textSecondary, fontSize: fontSize.small, fontWeight: fontWeight.semibold },
+  segmentTextActive: { color: colors.text, fontWeight: fontWeight.bold },
+  switchRow: { alignItems: 'center', borderColor: colors.primaryBorder, borderRadius: radius.control, borderWidth: borderWidth.thin, flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: spacing.md, paddingVertical: spacing.md },
+  switchRowSpaced: { marginTop: spacing.sm },
+  switchLabel: { color: colors.text, fontSize: fontSize.section, fontWeight: fontWeight.semibold },
+  resetButton: { alignItems: 'center', marginTop: spacing.inset, paddingVertical: spacing.compact },
   resetDisabled: { opacity: 0.45 },
-  resetText: { color: '#dc2626', fontSize: 14, fontWeight: '600' },
-  resetTextDisabled: { color: '#94a3b8' },
-  applyButton: { alignItems: 'center', backgroundColor: '#2563eb', borderRadius: 12, marginTop: 10, paddingVertical: 14 },
+  resetText: { color: colors.error, fontSize: fontSize.section, fontWeight: fontWeight.semibold },
+  resetTextDisabled: { color: colors.textMuted },
+  applyButton: { alignItems: 'center', backgroundColor: colors.primary, borderRadius: radius.md, marginTop: spacing.control, paddingVertical: spacing.inset },
   applyDisabled: { opacity: 0.55 },
-  applyText: { color: '#fff', fontSize: 15, fontWeight: '700' },
-  fieldLabel: { color: '#334155', fontSize: 13, fontWeight: '600', marginBottom: 6, marginTop: 10 },
-  fieldInput: { backgroundColor: '#f8fafc', borderColor: '#e2e8f0', borderRadius: 12, borderWidth: 1, color: '#0f172a', paddingHorizontal: 12, paddingVertical: 12 },
+  applyText: { color: colors.primaryText, fontSize: fontSize.body, fontWeight: fontWeight.bold },
+  fieldLabel: { color: colors.text, fontSize: fontSize.caption, fontWeight: fontWeight.semibold, marginBottom: spacing.compact, marginTop: spacing.control },
+  fieldInput: { backgroundColor: colors.background, borderColor: colors.inputBorder, borderRadius: radius.md, borderWidth: borderWidth.thin, color: colors.text, paddingHorizontal: spacing.md, paddingVertical: spacing.md },
   addFormScroll: { maxHeight: 420 },
   addTagOptionsScroll: { maxHeight: 200 },
-  addTagOptionsContent: { alignItems: 'flex-start', flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  addTagOptionChip: { alignSelf: 'flex-start', alignItems: 'center', borderRadius: 999, borderWidth: 1, flexDirection: 'row', flexGrow: 0, flexShrink: 0, gap: 5, paddingHorizontal: 10, paddingVertical: 6 },
-  addTagOptionText: { fontSize: 12, fontWeight: '600' },
-  addFormContent: { paddingBottom: 24 },
-  optionSubtext: { color: '#94a3b8', fontSize: 12, marginTop: 2 },
-  addSelectedTags: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 8 },
-  addSelectedTag: { alignItems: 'center', borderRadius: 999, borderWidth: 1, flexDirection: 'row', gap: 5, paddingHorizontal: 10, paddingVertical: 5 },
-  addSelectedTagText: { fontSize: 12, fontWeight: '600' },
-  createTagRow: { alignItems: 'center', backgroundColor: '#eff6ff', borderRadius: 12, flexDirection: 'row', gap: 8, marginTop: 4, paddingHorizontal: 10, paddingVertical: 10 },
-  createTagRowText: { color: '#2563eb', fontSize: 13, fontWeight: '700' },
-});
+  addTagOptionsContent: { alignItems: 'flex-start', flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
+  addTagOptionChip: { alignSelf: 'flex-start', alignItems: 'center', borderRadius: radius.pill, borderWidth: borderWidth.thin, flexDirection: 'row', flexGrow: 0, flexShrink: 0, gap: spacing.xs + spacing.hairline, paddingHorizontal: spacing.control, paddingVertical: spacing.compact },
+  addTagOptionText: { fontSize: fontSize.small, fontWeight: fontWeight.semibold },
+  addFormContent: { paddingBottom: spacing.xxl },
+  optionSubtext: { color: colors.textMuted, fontSize: fontSize.small, marginTop: spacing.xxs },
+  addSelectedTags: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, marginBottom: spacing.sm },
+  addSelectedTag: { alignItems: 'center', borderRadius: radius.pill, borderWidth: borderWidth.thin, flexDirection: 'row', gap: spacing.xs + spacing.hairline, paddingHorizontal: spacing.control, paddingVertical: spacing.xs + spacing.hairline },
+  addSelectedTagText: { fontSize: fontSize.small, fontWeight: fontWeight.semibold },
+  createTagRow: { alignItems: 'center', backgroundColor: colors.primarySoft, borderRadius: radius.md, flexDirection: 'row', gap: spacing.sm, marginTop: spacing.xs, paddingHorizontal: spacing.control, paddingVertical: spacing.control },
+  createTagRowText: { color: colors.primary, fontSize: fontSize.caption, fontWeight: fontWeight.bold },
+}));
