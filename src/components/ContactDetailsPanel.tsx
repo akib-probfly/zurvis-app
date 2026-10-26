@@ -14,6 +14,7 @@ import { MediaViewer, type MediaGalleryItem } from './MediaViewer';
 import { PanelSkeleton } from './Skeleton';
 import { VideoPlayerModal } from './VideoPlayer';
 import { useTheme } from '../theme/ThemeContext';
+import { spacing } from '../theme/tokens';
 import Toast from 'react-native-toast-message';
 
 export function formatPhoneNumberDisplay(phone: string | null | undefined): string | null {
@@ -612,8 +613,8 @@ const styles = StyleSheet.create({
   editConfirm: { alignItems: 'center', height: 26, justifyContent: 'center', width: 26 },
   errorText: { color: '#e11d48', fontSize: 11, marginBottom: 6, textAlign: 'right' },
   tagsBody: { marginTop: 12 },
-  chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  chip: { alignItems: 'center', borderRadius: 999, flexDirection: 'row', gap: 6, paddingHorizontal: 12, paddingVertical: 6 },
+  chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs },
+  chip: { alignItems: 'center', borderRadius: 999, flexDirection: 'row', gap: spacing.xs, paddingHorizontal: spacing.sm, paddingVertical: spacing.xs },
   chipText: { color: '#fff', fontSize: 12, fontWeight: '700' },
   chipRemove: { color: 'rgba(255,255,255,0.85)', fontSize: 14, fontWeight: '700' },
   emptyText: { color: '#94a3b8', fontSize: 12, paddingVertical: 6 },
@@ -623,8 +624,8 @@ const styles = StyleSheet.create({
   colorDot: { borderRadius: 10, height: 22, width: 22 },
   colorDotActive: { borderColor: '#0f172a', borderWidth: 2 },
   suggestedTagsScroll: { maxHeight: 220, marginTop: 12 },
-  suggestedTags: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  suggestChip: { alignItems: 'center', borderRadius: 999, borderWidth: 1, flexDirection: 'row', gap: 5, paddingHorizontal: 10, paddingVertical: 6 },
+  suggestedTags: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs },
+  suggestChip: { alignItems: 'center', borderRadius: 999, borderWidth: 1, flexDirection: 'row', gap: spacing.xs, paddingHorizontal: spacing.sm, paddingVertical: spacing.xs },
   suggestChipText: { color: '#334155', fontSize: 12, fontWeight: '600' },
   createTagBtn: { alignItems: 'center', backgroundColor: '#2563eb', borderRadius: 12, height: 40, justifyContent: 'center', marginTop: 12 },
   createTagText: { color: '#fff', fontSize: 13, fontWeight: '700' },
