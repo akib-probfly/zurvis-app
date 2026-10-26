@@ -162,7 +162,9 @@ export function parseMessageTextParts(text: string): MessageTextPart[] {
   }
 
   // Keep phone links out of URLs/emails and avoid matching inside identifiers.
-  const phonePattern = /(?<![\p{L}\p{N}_+])\+?(?:\(\d{1,4}\)|\d)[\d ()-]*\d(?![\p{L}\p{N}_])/gu;
+  // Match one complete BD mobile number at a time, including formatted numbers.
+  // An unbounded digit/space match swallows consecutive numbers and newlines.
+  const phonePattern = /(?<![\p{L}\p{N}_+])(?:\+?88[ ()-]*)?0[ ()-]*1[ ()-]*[3-9](?:[ ()-]*\d){8}(?![\p{L}\p{N}_])/gu;
   for (const phoneMatch of text.matchAll(phonePattern)) {
     const value = phoneMatch[0];
     const start = phoneMatch.index ?? 0;

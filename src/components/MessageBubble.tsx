@@ -229,14 +229,14 @@ function StandardMessageBubble({ message, outgoing, attachments, replyPreview, r
     return (
       <View>
         <Text
-          style={outgoing ? styles.outgoingText : [styles.messageText, { color: colors.text }]}
+          style={[outgoing ? styles.outgoingText : [styles.messageText, { color: colors.text }], hasAndroidPhoneLink && styles.phoneBody]}
           numberOfLines={clamp ? COLLAPSED_LINE_COUNT : undefined}
           onTextLayout={(e) => {
             if (!hasAndroidPhoneLink && !canExpand && e.nativeEvent.lines.length > COLLAPSED_LINE_COUNT) setOverflowBodyKey(bodyKey);
           }}
         >
           {bodyParts.map((part, index) => part.type === 'url' ? (
-            <Text key={index} style={[styles.link, outgoing && styles.outgoingLink, !outgoing && { color: colors.primary }, part.href?.startsWith('tel:') && styles.phoneLink]} onPress={() => openLink(part.href)}>{part.value}</Text>
+            <Text key={index} style={[styles.link, outgoing && styles.outgoingLink, !outgoing && { color: colors.primary }, part.href?.startsWith('tel:') && [styles.phoneLink, { textDecorationColor: outgoing ? '#eaf1ff' : colors.primary }]]} onPress={() => openLink(part.href)}>{part.value}</Text>
           ) : (
             <Text key={index}>{part.value}</Text>
           ))}
@@ -425,9 +425,9 @@ function StandardMessageBubble({ message, outgoing, attachments, replyPreview, r
             ) : null}
             {templateDisplay.bodyText ? (
               <View style={styles.templateBodyWrap}>
-                <Text selectable style={[styles.templateBodyText, { color: colors.text }]}>
+                <Text selectable style={[styles.templateBodyText, { color: colors.text }, templateBodyParts.some((part) => part.href?.startsWith('tel:')) && styles.phoneBody]}>
                   {templateBodyParts.map((part, index) => part.type === 'url' ? (
-                    <Text key={index} style={[styles.link, { color: colors.primary }, part.href?.startsWith('tel:') && styles.phoneLink]} onPress={() => openLink(part.href)}>{part.value}</Text>
+                    <Text key={index} style={[styles.link, { color: colors.primary }, part.href?.startsWith('tel:') && [styles.phoneLink, { textDecorationColor: colors.primary }]]} onPress={() => openLink(part.href)}>{part.value}</Text>
                   ) : (
                     <Text key={index}>{part.value}</Text>
                   ))}
@@ -942,7 +942,10 @@ const createStyles = createThemedStyles((colors) => StyleSheet.create({
   // Keep links colored and tappable without invoking that native drawing path.
   link: { color: colors.primary, textDecorationLine: Platform.OS === 'android' ? 'none' : 'underline' },
   outgoingLink: { color: '#eaf1ff' },
-  phoneLink: { textDecorationLine: 'underline' },
+  // RN 0.88 Android's dashed decoration enforces a visible minimum thickness;
+  // solid decoration relies on the font's underlineThickness, which can be zero.
+  phoneLink: { textDecorationLine: 'underline', textDecorationStyle: Platform.OS === 'android' ? 'dashed' : 'solid', fontWeight: '700' },
+  phoneBody: { lineHeight: 24, paddingBottom: 4 },
   readMore: { color: colors.primary, fontSize: fontSize.small, fontWeight: fontWeight.semibold },
   readMoreRow: { alignItems: 'center', flexDirection: 'row', gap: spacing.tight, marginTop: spacing.xs },
   broadcastBadge: { alignItems: 'center', alignSelf: 'flex-start', backgroundColor: colors.primary, borderRadius: radius.compact, flexDirection: 'row', gap: spacing.xs, marginBottom: spacing.compact, paddingHorizontal: spacing.compact, paddingVertical: spacing.tight },
