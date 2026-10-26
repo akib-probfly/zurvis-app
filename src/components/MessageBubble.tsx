@@ -2,7 +2,7 @@ import { createThemedStyles } from '../theme/createThemedStyles';
 import { borderWidth, fontSize, fontWeight, letterSpacing, lineHeight, radius, spacing } from '../theme/tokens';
 import * as Clipboard from 'expo-clipboard';
 import { Check, CheckCheck, FileText, ExternalLink, ChevronDown, ChevronUp, Megaphone, Sparkles, Image as ImageIcon, Video, Mic, MapPin, ContactRound, Copy, Phone, Mail, Building2, PackagePlus } from 'lucide-react-native';
-import { useState, useMemo } from 'react';
+import { memo, useState, useMemo } from 'react';
 import { ActivityIndicator, Linking, Platform, Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { WebView } from 'react-native-webview';
 import { AuthenticatedImage } from './AuthenticatedImage';
@@ -44,7 +44,7 @@ function openLink(href?: string) {
   Linking.openURL(href).catch(() => {});
 }
 
-function PhoneNumberLink({ value, href, color, size = fontSize.body }: { value: string; href: string; color: string; size?: number }) {
+const PhoneNumberLink = memo(function PhoneNumberLink({ value, href, color, size = fontSize.body }: { value: string; href: string; color: string; size?: number }) {
   const { fontScale } = useWindowDimensions();
   const [measurement, setMeasurement] = useState<{ key: string; width: number } | null>(null);
   const measurementKey = `${value}:${size}:${fontScale}`;
@@ -54,7 +54,7 @@ function PhoneNumberLink({ value, href, color, size = fontSize.body }: { value: 
   // Draw a solid 2dp line close to the digits without changing text layout.
   return (
     <View style={{ width, height: lineHeight.body * fontScale + 2 }}>
-      <Text
+      {measurement?.key !== measurementKey ? <Text
         accessible={false}
         pointerEvents="none"
         style={[textStyle, { position: 'absolute', width: 1000, opacity: 0 }]}
@@ -64,12 +64,12 @@ function PhoneNumberLink({ value, href, color, size = fontSize.body }: { value: 
             setMeasurement({ key: measurementKey, width: measuredWidth });
           }
         }}
-      >{value}</Text>
+      >{value}</Text> : null}
       <Text style={textStyle} numberOfLines={1} accessibilityRole="link" onPress={() => openLink(href)}>{value}</Text>
       <View pointerEvents="none" style={{ position: 'absolute', left: 0, right: 0, bottom: 3 * fontScale, height: 2, backgroundColor: color }} />
     </View>
   );
-}
+});
 
 function normalizeLocationBody(value: string) {
   return value.toLowerCase().replace(/\s+/g, ' ').trim();
@@ -147,7 +147,10 @@ function StandardMessageBubble({ message, outgoing, attachments, replyPreview, r
   const isInstagramSharedPostTemplate =
     String(channelType ?? '').toUpperCase() === 'INSTAGRAM' &&
     isInstagramSharedPostTemplateMessage(message);
-  const templateDisplay = isTemplateLikeMessage(message) && !isInstagramSharedPostTemplate ? getTemplateMessageDisplay(message) : null;
+  const templateDisplay = useMemo(
+    () => isTemplateLikeMessage(message) && !isInstagramSharedPostTemplate ? getTemplateMessageDisplay(message) : null,
+    [message, isInstagramSharedPostTemplate],
+  );
   const templateHeaderUrl = templateDisplay?.headerMediaUrl ?? null;
   const templateBodyParts = useMemo(
     () => templateDisplay?.bodyText ? parseMessageTextParts(templateDisplay.bodyText) : [],
@@ -157,19 +160,19 @@ function StandardMessageBubble({ message, outgoing, attachments, replyPreview, r
   const hasStructuredOrderDetails = /(?:^|\n)\s*name\s*:\s*\S+/im.test(messageText) &&
     /(?:^|\n)\s*address\s*:\s*\S+/im.test(messageText) &&
     /(?:^|\n)\s*(?:number|phone)\s*:\s*\S+/im.test(messageText);
-  const isTemplateHeaderAttachment = (attachment: any) => {
-    if (!templateDisplay) return false;
-    const attachmentMediaType = (attachment.mediaType ?? '').toUpperCase();
-    if (!['IMAGE', 'VIDEO', 'DOCUMENT', 'STICKER'].includes(attachmentMediaType) && !(attachment.mimeType ?? '').toLowerCase().startsWith('image/') && !(attachment.mimeType ?? '').toLowerCase().startsWith('video/')) {
-      return false;
-    }
-    if (!templateHeaderUrl) return false;
-    const rawUrls = [attachment.previewUrl, attachment.thumbnailUrl, attachment.downloadUrl].filter(Boolean) as string[];
-    if (rawUrls.includes(templateHeaderUrl)) return true;
-    const urls = rawUrls.map((value) => resolveMediaUrl(process.env.EXPO_PUBLIC_API_BASE_URL ?? 'https://api.zurvis.io/api/v1', value));
-    return urls.includes(templateHeaderUrl);
-  };
   const { imageAttachments, voiceAttachments, videoAttachments, documentAttachments } = useMemo(() => {
+    const isTemplateHeaderAttachment = (attachment: any) => {
+      if (!templateDisplay) return false;
+      const attachmentMediaType = (attachment.mediaType ?? '').toUpperCase();
+      if (!['IMAGE', 'VIDEO', 'DOCUMENT', 'STICKER'].includes(attachmentMediaType) && !(attachment.mimeType ?? '').toLowerCase().startsWith('image/') && !(attachment.mimeType ?? '').toLowerCase().startsWith('video/')) {
+        return false;
+      }
+      if (!templateHeaderUrl) return false;
+      const rawUrls = [attachment.previewUrl, attachment.thumbnailUrl, attachment.downloadUrl].filter(Boolean) as string[];
+      if (rawUrls.includes(templateHeaderUrl)) return true;
+      const urls = rawUrls.map((value) => resolveMediaUrl(process.env.EXPO_PUBLIC_API_BASE_URL ?? 'https://api.zurvis.io/api/v1', value));
+      return urls.includes(templateHeaderUrl);
+    };
     const images: any[] = [];
     const voices: any[] = [];
     const videos: any[] = [];
