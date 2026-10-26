@@ -3,7 +3,7 @@ import { borderWidth, fontSize, fontWeight, letterSpacing, lineHeight, radius, s
 import * as Clipboard from 'expo-clipboard';
 import { Check, CheckCheck, FileText, ExternalLink, ChevronDown, ChevronUp, Megaphone, Sparkles, Image as ImageIcon, Video, Mic, MapPin, ContactRound, Copy, Phone, Mail, Building2, PackagePlus } from 'lucide-react-native';
 import { useState, useMemo } from 'react';
-import { ActivityIndicator, Linking, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Linking, Platform, Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { WebView } from 'react-native-webview';
 import { AuthenticatedImage } from './AuthenticatedImage';
 import { VideoThumb } from './VideoThumb';
@@ -42,6 +42,33 @@ const COLLAPSED_LINE_COUNT = 4;
 function openLink(href?: string) {
   if (!href) return;
   Linking.openURL(href).catch(() => {});
+}
+
+function PhoneNumberLink({ value, href, color, size = fontSize.body }: { value: string; href: string; color: string; size?: number }) {
+  const { fontScale } = useWindowDimensions();
+  const [measurement, setMeasurement] = useState<{ key: string; width: number } | null>(null);
+  const measurementKey = `${value}:${size}:${fontScale}`;
+  const width = measurement?.key === measurementKey ? measurement.width : value.length * size * fontScale * 0.65;
+  const textStyle = { color, fontSize: size, fontWeight: fontWeight.bold, lineHeight: lineHeight.body };
+  // Explicit dimensions let this view participate in native inline text layout.
+  // Draw a solid 2dp line close to the digits without changing text layout.
+  return (
+    <View style={{ width, height: lineHeight.body * fontScale + 2 }}>
+      <Text
+        accessible={false}
+        pointerEvents="none"
+        style={[textStyle, { position: 'absolute', width: 1000, opacity: 0 }]}
+        onTextLayout={(event) => {
+          const measuredWidth = Math.ceil(event.nativeEvent.lines[0]?.width ?? 0);
+          if (measuredWidth > 0 && (measurement?.key !== measurementKey || measurement.width !== measuredWidth)) {
+            setMeasurement({ key: measurementKey, width: measuredWidth });
+          }
+        }}
+      >{value}</Text>
+      <Text style={textStyle} numberOfLines={1} accessibilityRole="link" onPress={() => openLink(href)}>{value}</Text>
+      <View pointerEvents="none" style={{ position: 'absolute', left: 0, right: 0, bottom: 3 * fontScale, height: 2, backgroundColor: color }} />
+    </View>
+  );
 }
 
 function normalizeLocationBody(value: string) {
@@ -235,8 +262,10 @@ function StandardMessageBubble({ message, outgoing, attachments, replyPreview, r
             if (!hasAndroidPhoneLink && !canExpand && e.nativeEvent.lines.length > COLLAPSED_LINE_COUNT) setOverflowBodyKey(bodyKey);
           }}
         >
-          {bodyParts.map((part, index) => part.type === 'url' ? (
-            <Text key={index} style={[styles.link, outgoing && styles.outgoingLink, !outgoing && { color: colors.primary }, part.href?.startsWith('tel:') && [styles.phoneLink, { textDecorationColor: outgoing ? '#eaf1ff' : colors.primary }]]} onPress={() => openLink(part.href)}>{part.value}</Text>
+          {bodyParts.map((part, index) => part.href?.startsWith('tel:') ? (
+            <PhoneNumberLink key={index} value={part.value} href={part.href} color={outgoing ? '#eaf1ff' : colors.primary} />
+          ) : part.type === 'url' ? (
+            <Text key={index} style={[styles.link, outgoing && styles.outgoingLink, !outgoing && { color: colors.primary }]} onPress={() => openLink(part.href)}>{part.value}</Text>
           ) : (
             <Text key={index}>{part.value}</Text>
           ))}
@@ -426,8 +455,10 @@ function StandardMessageBubble({ message, outgoing, attachments, replyPreview, r
             {templateDisplay.bodyText ? (
               <View style={styles.templateBodyWrap}>
                 <Text selectable style={[styles.templateBodyText, { color: colors.text }, templateBodyParts.some((part) => part.href?.startsWith('tel:')) && styles.phoneBody]}>
-                  {templateBodyParts.map((part, index) => part.type === 'url' ? (
-                    <Text key={index} style={[styles.link, { color: colors.primary }, part.href?.startsWith('tel:') && [styles.phoneLink, { textDecorationColor: colors.primary }]]} onPress={() => openLink(part.href)}>{part.value}</Text>
+                  {templateBodyParts.map((part, index) => part.href?.startsWith('tel:') ? (
+                    <PhoneNumberLink key={index} value={part.value} href={part.href} color={colors.primary} size={fontSize.caption} />
+                  ) : part.type === 'url' ? (
+                    <Text key={index} style={[styles.link, { color: colors.primary }]} onPress={() => openLink(part.href)}>{part.value}</Text>
                   ) : (
                     <Text key={index}>{part.value}</Text>
                   ))}
@@ -942,9 +973,6 @@ const createStyles = createThemedStyles((colors) => StyleSheet.create({
   // Keep links colored and tappable without invoking that native drawing path.
   link: { color: colors.primary, textDecorationLine: Platform.OS === 'android' ? 'none' : 'underline' },
   outgoingLink: { color: '#eaf1ff' },
-  // RN 0.88 Android's dashed decoration enforces a visible minimum thickness;
-  // solid decoration relies on the font's underlineThickness, which can be zero.
-  phoneLink: { textDecorationLine: 'underline', textDecorationStyle: Platform.OS === 'android' ? 'dashed' : 'solid', fontWeight: '700' },
   phoneBody: { lineHeight: 24, paddingBottom: 4 },
   readMore: { color: colors.primary, fontSize: fontSize.small, fontWeight: fontWeight.semibold },
   readMoreRow: { alignItems: 'center', flexDirection: 'row', gap: spacing.tight, marginTop: spacing.xs },
