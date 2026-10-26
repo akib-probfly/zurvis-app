@@ -4,7 +4,10 @@ const APP_ACTIVITIES = new Set([
   '.MainActivity',
   'com.zurvis.mobile.MainActivity',
 ]);
-const MLKIT_CODE_SCANNER_ACTIVITY = 'com.google.mlkit.vision.codescanner.internal.GmsBarcodeScanningDelegateActivity';
+const MLKIT_SCANNER_ACTIVITIES = [
+  'com.google.mlkit.vision.codescanner.internal.GmsBarcodeScanningDelegateActivity',
+  'com.google.mlkit.vision.documentscanner.internal.GmsDocumentScanningDelegateActivity',
+];
 
 function removeActivityOrientation(activity) {
   if (!activity || !activity.$) return;
@@ -15,9 +18,9 @@ function removeActivityOrientation(activity) {
   delete activity.$['android:screenOrientation'];
 }
 
-function ensureMlkitOrientationOverride(activities) {
+function ensureMlkitOrientationOverride(activities, activityName) {
   const existing = activities.find(
-    (activity) => activity?.$?.['android:name'] === MLKIT_CODE_SCANNER_ACTIVITY,
+    (activity) => activity?.$?.['android:name'] === activityName,
   );
 
   if (existing) {
@@ -27,7 +30,7 @@ function ensureMlkitOrientationOverride(activities) {
 
   activities.push({
     $: {
-      'android:name': MLKIT_CODE_SCANNER_ACTIVITY,
+      'android:name': activityName,
       'tools:remove': 'android:screenOrientation',
     },
   });
@@ -50,7 +53,9 @@ module.exports = function removeAndroidLargeScreenRestrictions(config) {
     const activities = application?.activity ?? [];
 
     activities.forEach(removeActivityOrientation);
-    ensureMlkitOrientationOverride(activities);
+    MLKIT_SCANNER_ACTIVITIES.forEach((activityName) => {
+      ensureMlkitOrientationOverride(activities, activityName);
+    });
 
     return configWithManifest;
   });
