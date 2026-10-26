@@ -116,6 +116,10 @@ export function ContactDetailsPanel({ visible, onClose, conversation, isUpdating
   const conversationTags = useMemo(() => (conversationTagsQuery.data?.items ?? []).filter((tag) => !tag.isArchived), [conversationTagsQuery.data?.items]);
   const conversationTagIds = useMemo(() => new Set(conversationTags.map((tag) => tag.id)), [conversationTags]);
   const workspaceTags = useMemo(() => [...(workspaceTagsQuery.data?.items ?? [])].sort((a, b) => a.text.localeCompare(b.text)), [workspaceTagsQuery.data?.items]);
+  const suggestedTags = useMemo(() => {
+    const search = tagInput.trim().toLowerCase();
+    return workspaceTags.filter((tag) => !conversationTagIds.has(tag.id) && tag.text.toLowerCase().includes(search));
+  }, [workspaceTags, conversationTagIds, tagInput]);
   const mediaAttachments = useMemo(() => (attachmentsQuery.data?.items ?? []).filter((a) => ['IMAGE', 'VIDEO', 'STICKER'].includes(a.mediaType?.toUpperCase?.() ?? '')), [attachmentsQuery.data?.items]);
   const documentAttachments = useMemo(() => (attachmentsQuery.data?.items ?? []).filter((a) => !['IMAGE', 'VIDEO', 'STICKER'].includes(a.mediaType?.toUpperCase?.() ?? '')), [attachmentsQuery.data?.items]);
   const mediaGallery = useMemo(() => mediaAttachments.filter((attachment) => {
@@ -421,12 +425,15 @@ export function ContactDetailsPanel({ visible, onClose, conversation, isUpdating
                     </View>
                   </View>
                   <ScrollView style={styles.suggestedTagsScroll} nestedScrollEnabled keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator contentContainerStyle={styles.suggestedTags}>
-                    {workspaceTags.filter((tag) => !conversationTagIds.has(tag.id)).map((tag) => (
+                    {suggestedTags.map((tag) => (
                       <Pressable key={tag.id} onPress={() => handleAttach(tag)} style={[styles.suggestChip, { borderColor: tag.color ?? colors.cardBorder }]}>
                         <Plus color={tag.color ?? colors.textSecondary} size={12} />
                         <Text style={[styles.suggestChipText, { color: colors.textSecondary }]}>{tag.text}</Text>
                       </Pressable>
                     ))}
+                    {tagInput.trim() && !workspaceTagsQuery.isLoading && !suggestedTags.length ? (
+                      <Text style={[styles.emptyText, { color: colors.textMuted }]}>No available tags match your search.</Text>
+                    ) : null}
                   </ScrollView>
                   {tagInput.trim().length > 0 && !workspaceTags.some((tag) => tag.text.toLowerCase() === tagInput.trim().toLowerCase()) ? (
                     <Pressable onPress={() => createTagMutation.mutate()} style={[styles.createTagBtn, { backgroundColor: colors.primary }]}>
