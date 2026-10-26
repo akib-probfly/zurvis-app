@@ -44,14 +44,14 @@ function openLink(href?: string) {
   Linking.openURL(href).catch(() => {});
 }
 
-const PhoneNumberLink = memo(function PhoneNumberLink({ value, href, color, size = fontSize.body }: { value: string; href: string; color: string; size?: number }) {
+const UnderlinedMessageLink = memo(function UnderlinedMessageLink({ value, href, color, size = fontSize.body }: { value: string; href: string; color: string; size?: number }) {
   const { fontScale } = useWindowDimensions();
   const [measurement, setMeasurement] = useState<{ key: string; width: number } | null>(null);
   const measurementKey = `${value}:${size}:${fontScale}`;
   const width = measurement?.key === measurementKey ? measurement.width : value.length * size * fontScale * 0.65;
   const textStyle = { color, fontSize: size, fontWeight: fontWeight.bold, lineHeight: lineHeight.body };
   // Explicit dimensions let this view participate in native inline text layout.
-  // Draw a solid 2dp line close to the digits without changing text layout.
+  // Draw a solid 2dp line close to the text without changing text layout.
   return (
     <View style={{ width, height: lineHeight.body * fontScale + 2 }}>
       {measurement?.key !== measurementKey ? <Text
@@ -243,9 +243,9 @@ function StandardMessageBubble({ message, outgoing, attachments, replyPreview, r
   // Native line measurements can be missing or delayed in recycled list cells.
   // Clearly long bodies must still start collapsed and expose the toggle.
   // Android's decorated spans can crash when numberOfLines clips their range.
-  // Keep phone links underlined by rendering their entire message body.
-  const hasAndroidPhoneLink = Platform.OS === 'android' && bodyParts.some((part) => part.href?.startsWith('tel:'));
-  const canExpand = !hasAndroidPhoneLink && (overflowBodyKey === bodyKey
+  // Keep inline links visible by rendering their entire message body.
+  const hasAndroidInlineLink = Platform.OS === 'android' && bodyParts.some((part) => (part.href?.startsWith('tel:') || part.href?.startsWith('mailto:')));
+  const canExpand = !hasAndroidInlineLink && (overflowBodyKey === bodyKey
     || body.length > 400
     || body.split('\n').length > COLLAPSED_LINE_COUNT);
   const [openingDocumentId, setOpeningDocumentId] = useState<string | null>(null);
@@ -259,14 +259,14 @@ function StandardMessageBubble({ message, outgoing, attachments, replyPreview, r
     return (
       <View>
         <Text
-          style={[outgoing ? styles.outgoingText : [styles.messageText, { color: colors.text }], hasAndroidPhoneLink && styles.phoneBody]}
+          style={[outgoing ? styles.outgoingText : [styles.messageText, { color: colors.text }], hasAndroidInlineLink && styles.inlineLinkBody]}
           numberOfLines={clamp ? COLLAPSED_LINE_COUNT : undefined}
           onTextLayout={(e) => {
-            if (!hasAndroidPhoneLink && !canExpand && e.nativeEvent.lines.length > COLLAPSED_LINE_COUNT) setOverflowBodyKey(bodyKey);
+            if (!hasAndroidInlineLink && !canExpand && e.nativeEvent.lines.length > COLLAPSED_LINE_COUNT) setOverflowBodyKey(bodyKey);
           }}
         >
-          {bodyParts.map((part, index) => part.href?.startsWith('tel:') ? (
-            <PhoneNumberLink key={index} value={part.value} href={part.href} color={outgoing ? '#eaf1ff' : colors.primary} />
+          {bodyParts.map((part, index) => (part.href?.startsWith('tel:') || part.href?.startsWith('mailto:')) ? (
+            <UnderlinedMessageLink key={index} value={part.value} href={part.href} color={outgoing ? '#eaf1ff' : colors.primary} />
           ) : part.type === 'url' ? (
             <Text key={index} style={[styles.link, outgoing && styles.outgoingLink, !outgoing && { color: colors.primary }]} onPress={() => openLink(part.href)}>{part.value}</Text>
           ) : (
@@ -457,9 +457,9 @@ function StandardMessageBubble({ message, outgoing, attachments, replyPreview, r
             ) : null}
             {templateDisplay.bodyText ? (
               <View style={styles.templateBodyWrap}>
-                <Text selectable style={[styles.templateBodyText, { color: colors.text }, templateBodyParts.some((part) => part.href?.startsWith('tel:')) && styles.phoneBody]}>
-                  {templateBodyParts.map((part, index) => part.href?.startsWith('tel:') ? (
-                    <PhoneNumberLink key={index} value={part.value} href={part.href} color={colors.primary} size={fontSize.caption} />
+                <Text selectable style={[styles.templateBodyText, { color: colors.text }, templateBodyParts.some((part) => (part.href?.startsWith('tel:') || part.href?.startsWith('mailto:'))) && styles.inlineLinkBody]}>
+                  {templateBodyParts.map((part, index) => (part.href?.startsWith('tel:') || part.href?.startsWith('mailto:')) ? (
+                    <UnderlinedMessageLink key={index} value={part.value} href={part.href} color={colors.primary} size={fontSize.caption} />
                   ) : part.type === 'url' ? (
                     <Text key={index} style={[styles.link, { color: colors.primary }]} onPress={() => openLink(part.href)}>{part.value}</Text>
                   ) : (
@@ -976,7 +976,7 @@ const createStyles = createThemedStyles((colors) => StyleSheet.create({
   // Keep links colored and tappable without invoking that native drawing path.
   link: { color: colors.primary, textDecorationLine: Platform.OS === 'android' ? 'none' : 'underline' },
   outgoingLink: { color: '#eaf1ff' },
-  phoneBody: { lineHeight: 24, paddingBottom: 4 },
+  inlineLinkBody: { lineHeight: 24, paddingBottom: 4 },
   readMore: { color: colors.primary, fontSize: fontSize.small, fontWeight: fontWeight.semibold },
   readMoreRow: { alignItems: 'center', flexDirection: 'row', gap: spacing.tight, marginTop: spacing.xs },
   broadcastBadge: { alignItems: 'center', alignSelf: 'flex-start', backgroundColor: colors.primary, borderRadius: radius.compact, flexDirection: 'row', gap: spacing.xs, marginBottom: spacing.compact, paddingHorizontal: spacing.compact, paddingVertical: spacing.tight },
