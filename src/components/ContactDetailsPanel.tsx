@@ -215,6 +215,7 @@ export function ContactDetailsPanel({ visible, onClose, conversation, isUpdating
 
   const banMutation = useMutation({
     mutationFn: async (action: BanAction) => {
+      if (!canToggleBan) throw new Error('Only WhatsApp and Messenger customers can be banned.');
       try {
         return action === 'unban' ? await unbanCrmContact(conversation.id) : await banCrmContact(conversation.id);
       } catch (error) {
@@ -317,8 +318,9 @@ export function ContactDetailsPanel({ visible, onClose, conversation, isUpdating
           <SheetScrollView style={styles.panelScroll} contentContainerStyle={{ paddingBottom: 24 }} keyboardShouldPersistTaps="handled">
             <Pressable
               onPress={confirmToggleBan}
-              disabled={banMutation.isPending}
-              style={[styles.banAction, { backgroundColor: colors.surfaceSecondary, borderColor: colors.cardBorder }, banMutation.isPending && styles.disabled]}
+              disabled={!canToggleBan || banMutation.isPending}
+              accessibilityState={{ disabled: !canToggleBan || banMutation.isPending }}
+              style={[styles.banAction, { backgroundColor: colors.surfaceSecondary, borderColor: colors.cardBorder }, (!canToggleBan || banMutation.isPending) && styles.disabled]}
             >
               <Ban color={isBlocked ? colors.error : colors.textSecondary} size={18} />
               <View style={{ flex: 1 }}>
@@ -550,10 +552,10 @@ export function ContactDetailsPanel({ visible, onClose, conversation, isUpdating
       </BottomSheet>
       <ConfirmDialog
         visible={banOpen}
-        title={isBlocked ? 'Unban User' : 'Ban User'}
-        body={isBlocked ? 'Allow this customer to message again?' : 'Stop this customer from messaging the business?'}
-        confirmLabel={isBlocked ? 'Unban' : 'Ban'}
-        destructive={!isBlocked}
+        title={pendingBanAction === 'unban' ? 'Unban User' : 'Ban User'}
+        body={pendingBanAction === 'unban' ? 'Allow this customer to message again?' : 'Stop this customer from messaging the business?'}
+        confirmLabel={pendingBanAction === 'unban' ? 'Unban' : 'Ban'}
+        destructive={pendingBanAction === 'ban'}
         loading={banMutation.isPending}
         icon={Ban}
         onClose={() => setBanOpen(false)}

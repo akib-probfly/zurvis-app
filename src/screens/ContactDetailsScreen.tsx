@@ -159,7 +159,7 @@ export function ContactDetailsScreen() {
   // same conversation first. Falling back to contact-level state caused
   // `unban` 409s ("Conversation is not blocked") when the contact flag was set
   // but the target conversation was not.
-  const banTargetConversation = conversations.find((item) => item.id === banConversationId) ?? conversations[0] ?? null;
+  const banTargetConversation = conversations.find((item) => item.id === banConversationId) ?? null;
   const targetBlockedAt = banTargetConversation?.blockedAt ?? null;
   const isBlocked = Boolean(targetBlockedAt);
   const showBlockedBadge = Boolean(contact?.blockedAt ?? targetBlockedAt);
@@ -225,6 +225,7 @@ export function ContactDetailsScreen() {
 
   const banMutation = useMutation({
     mutationFn: async (action: BanAction) => {
+      if (!canToggleBan) throw new Error('Only WhatsApp and Messenger contacts can be banned.');
       if (!banConversationId) throw new Error('No conversation available to ban for this contact.');
       try {
         return action === 'unban' ? await unbanCrmContact(banConversationId) : await banCrmContact(banConversationId);
@@ -272,6 +273,7 @@ export function ContactDetailsScreen() {
   });
 
   const confirmToggleBan = () => {
+    if (banMutation.isPending) return;
     if (!canToggleBan) {
       Toast.show({ type: 'info', text1: 'Only WhatsApp and Messenger contacts can be banned.' });
       return;
@@ -587,8 +589,9 @@ export function ContactDetailsScreen() {
             <Text style={[styles.sectionTitle, { color: colors.text }]}>Access</Text>
             <Pressable
               onPress={confirmToggleBan}
-              disabled={banMutation.isPending}
-              style={[styles.banAction, { backgroundColor: colors.surfaceSecondary, borderColor: colors.cardBorder }, banMutation.isPending && styles.saveDisabled]}
+              disabled={!canToggleBan || !banConversationId || banMutation.isPending}
+              accessibilityState={{ disabled: !canToggleBan || !banConversationId || banMutation.isPending }}
+              style={[styles.banAction, { backgroundColor: colors.surfaceSecondary, borderColor: colors.cardBorder }, (!canToggleBan || !banConversationId || banMutation.isPending) && styles.saveDisabled]}
             >
               {banMutation.isPending ? (
                 <ActivityIndicator color={isBlocked ? colors.error : colors.textSecondary} />
@@ -629,10 +632,10 @@ export function ContactDetailsScreen() {
 
       <ConfirmDialog
         visible={banOpen}
-        title={isBlocked ? 'Unban User' : 'Ban User'}
-        body={isBlocked ? 'Allow this contact to message the business again?' : 'Stop this contact from messaging the business?'}
-        confirmLabel={isBlocked ? 'Unban' : 'Ban'}
-        destructive={!isBlocked}
+        title={pendingBanAction === 'unban' ? 'Unban User' : 'Ban User'}
+        body={pendingBanAction === 'unban' ? 'Allow this contact to message the business again?' : 'Stop this contact from messaging the business?'}
+        confirmLabel={pendingBanAction === 'unban' ? 'Unban' : 'Ban'}
+        destructive={pendingBanAction === 'ban'}
         loading={banMutation.isPending}
         icon={Ban}
         onClose={() => setBanOpen(false)}
