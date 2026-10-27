@@ -1,5 +1,5 @@
 import { infiniteQueryOptions, useInfiniteQuery, useQuery, useQueryClient } from '@tanstack/react-query';
-import { ArrowDownLeft, ArrowUpRight, Ban, Check, CheckCircle2, CircleSlash, Filter, Image as ImageIcon, Inbox, Mail, MessageSquareText, Mic, Phone, PhoneCall, PhoneIncoming, PhoneMissed, PhoneOff, Search, Star, Video, X } from 'lucide-react-native';
+import { ArrowDownLeft, ArrowUpRight, Ban, Check, CheckCircle2, CircleSlash, CircleX, Filter, Image as ImageIcon, Inbox, Mail, MessageSquareText, Mic, Phone, PhoneCall, PhoneIncoming, PhoneMissed, PhoneOff, Search, Star, Video, X } from 'lucide-react-native';
 import { Animated, Easing, FlatList, Pressable, ScrollView, StyleSheet, Text, TextInput, View, RefreshControl } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useIsFocused, useNavigation } from '@react-navigation/native';
@@ -980,8 +980,13 @@ const ConversationRow = memo(function ConversationRow({ conversation, navigation
           <View style={styles.nameLine}>
             <Text style={[styles.name, { color: colors.text }, hasUnread && styles.nameUnread]} numberOfLines={1}>{conversation.contact.displayName ?? 'Unknown contact'}</Text>
             {isBlocked ? (
-              <View style={[styles.bannedBadge, { backgroundColor: colors.dangerSoft, borderColor: colors.dangerBorder }]} accessibilityLabel="Banned customer">
+              <View style={[styles.statusBadge, { backgroundColor: colors.dangerSoft, borderColor: colors.dangerBorder }]} accessibilityLabel="Banned customer">
                 <Ban color={colors.error} size={10} />
+              </View>
+            ) : null}
+            {conversation.status === 'CLOSED' ? (
+              <View style={styles.closedBadge} accessibilityLabel="Closed conversation">
+                <CircleX color={colors.textMuted} size={16} strokeWidth={1.8} />
               </View>
             ) : null}
             {showWindowDot ? <WindowPulseDot expired={windowExpired} /> : null}
@@ -1140,10 +1145,17 @@ const styles = StyleSheet.create({
   nameLine: { alignItems: 'center', flexDirection: 'row', gap: 6 },
   name: { flexShrink: 1, fontSize: fontSize.body, fontWeight: fontWeight.semibold },
   nameUnread: { fontWeight: '800' },
-  bannedBadge: {
+  statusBadge: {
     alignItems: 'center',
     borderRadius: 999,
     borderWidth: 1,
+    height: 18,
+    justifyContent: 'center',
+    width: 18,
+  },
+  closedBadge: {
+    alignItems: 'center',
+    flexShrink: 0,
     height: 18,
     justifyContent: 'center',
     width: 18,
