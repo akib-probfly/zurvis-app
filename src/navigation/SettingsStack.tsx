@@ -2,7 +2,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { SettingsScreen } from '../screens/SettingsScreen';
 import { ProfileScreen } from '../screens/ProfileScreen';
 import { WorkspaceSettingsScreen } from '../screens/WorkspaceSettingsScreen';
-import { MembersSettingsScreen } from '../screens/MembersSettingsScreen';
+import { MembersSettingsScreen, MemberDetailsScreen } from '../screens/MembersSettingsScreen';
 import { BillingSettingsScreen } from '../screens/BillingSettingsScreen';
 import { BillingPlanDetailsScreen } from '../screens/BillingPlanDetailsScreen';
 import { BillingCheckoutScreen } from '../screens/BillingCheckoutScreen';
@@ -33,6 +33,7 @@ export type SettingsStackParamList = {
   Profile: undefined;
   Workspace: undefined;
   Members: undefined;
+  MemberDetails: { memberId: string; kind: 'MEMBER' | 'INVITE'; email: string; workspaceId: string };
   Notifications: undefined;
   InboxAppearance: undefined;
   QuickReplies: undefined;
@@ -79,6 +80,7 @@ export function SettingsStack() {
       <Stack.Screen name="Profile" component={ProfileScreen} />
       <Stack.Screen name="Workspace" component={WorkspaceSettingsScreen} />
       <Stack.Screen name="Members" component={MembersSettingsScreen} />
+      <Stack.Screen name="MemberDetails" component={MemberDetailsScreen} />
       <Stack.Screen name="Notifications" component={NotificationSettingsScreen} />
       <Stack.Screen name="InboxAppearance" component={InboxAppearanceSettingsScreen} />
       <Stack.Screen name="QuickReplies" component={QuickRepliesSettingsScreen} />
