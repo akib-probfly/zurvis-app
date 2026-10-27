@@ -679,7 +679,8 @@ export function ConversationScreen() {
   });
   const statusMutation = useMutation({
     mutationFn: (status: string) => updateConversationStatus(route.params.conversationId, status as 'OPEN' | 'CLOSED'),
-    onSuccess: (_, status) => {
+    onSuccess: async (_, status) => {
+      await queryClient.cancelQueries({ queryKey: ['conversations'] });
       setHeader((c) => ({
         ...c,
         status,
@@ -689,7 +690,22 @@ export function ConversationScreen() {
         if (!current?.conversation) return current;
         return { ...current, conversation: { ...current.conversation, status } };
       });
+      queryClient.setQueriesData({ queryKey: ['conversations'] }, (current: any) => {
+        if (!current?.pages) return current;
+        return {
+          ...current,
+          pages: current.pages.map((page: any) => ({
+            ...page,
+            items: (page.items ?? []).map((item: any) => (
+              item.id === route.params.conversationId ? { ...item, status } : item
+            )),
+          })),
+        };
+      });
+      void queryClient.invalidateQueries({ queryKey: ['conversations'] });
+      void queryClient.invalidateQueries({ queryKey: ['conversation-count'] });
     },
+    onError: (error: Error) => showNotice('Could not update conversation status', error.message || 'Please try again.'),
   });
   const assignmentMutation = useMutation({
     mutationFn: (assignee: AssigneeFilterOption | null) => updateConversationAssignment(route.params.conversationId, assignee?.workspaceMemberId ?? null),
