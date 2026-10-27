@@ -15,7 +15,7 @@ export function ReactionPicker({
   visible: boolean;
   onPick: (emoji: string) => void;
   onClose: () => void;
-  onReply: () => void;
+  onReply?: () => void;
   onCopy?: () => void;
 }) {
   const { colors } = useTheme();
@@ -35,10 +35,10 @@ export function ReactionPicker({
             ))}
           </View>
           <View style={styles.actionRow}>
-            <Pressable style={[styles.actionButton, { borderColor: colors.cardBorder }]} onPress={() => { onClose(); onReply(); }}>
+            {onReply ? <Pressable style={[styles.actionButton, { borderColor: colors.cardBorder }]} onPress={() => { onClose(); onReply(); }}>
               <ReplyIcon color={colors.primary} size={20} />
               <Text style={[styles.actionText, { color: colors.primary }]}>Reply</Text>
-            </Pressable>
+            </Pressable> : null}
             {onCopy ? (
               <Pressable style={[styles.actionButton, { borderColor: colors.cardBorder }]} onPress={() => { onClose(); onCopy(); }}>
                 <Copy color={colors.primary} size={20} />

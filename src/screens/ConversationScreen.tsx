@@ -1448,7 +1448,7 @@ export function ConversationScreen() {
         visible={Boolean(reactTarget)}
         onClose={() => setReactTarget(null)}
         onPick={(emoji) => { if (reactTarget) reactMutation.mutate({ messageId: reactTarget.id, emoji }); setReactTarget(null); }}
-        onReply={() => { if (reactTarget) setReplyTo(reactTarget); setReactTarget(null); }}
+        onReply={(channelType ?? '').toUpperCase() === 'INSTAGRAM' ? undefined : () => { if (reactTarget) setReplyTo(reactTarget); setReactTarget(null); }}
         onCopy={reactTarget?.text ? () => {
           const text = reactTarget.text ?? '';
           setReactTarget(null);
@@ -1543,7 +1543,7 @@ const SwipeableMessage = memo(function SwipeableMessage({ message, channelName, 
   }, [message.id, message.replyTo, replyTarget]);
   if (isInlineReactionMessage(message)) return null;
   return (
-    <SwipeToReply onReply={onReply}>
+    <SwipeToReply onReply={onReply} enabled={(channelType ?? '').toUpperCase() !== 'INSTAGRAM'}>
       <View style={[styles.group, outgoing && styles.outgoingGroup]}>
         <MessageBubble message={message} outgoing={outgoing} attachments={message.attachments ?? []} replyPreview={replyPreview} reactions={reactions} channelName={channelName} channelType={channelType} channelId={channelId} onImage={onImage} onVideo={onVideo} onLongPress={onReact} onReplyPress={onJumpToMessage && replyTargetId ? () => onJumpToMessage(replyTargetId) : undefined} onCreateOrderFromMessage={onCreateOrderFromMessage} creatingOrderDraft={creatingOrderDraftFor === message.id} />
       </View>

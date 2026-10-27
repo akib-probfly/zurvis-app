@@ -13,7 +13,7 @@ const ACTION_WIDTH = 56;
 const HORIZONTAL_ACTIVATION = 20;
 const VERTICAL_TOLERANCE = 14;
 
-export function SwipeToReply({ children, onReply }: { children: ReactNode; onReply: () => void }) {
+export function SwipeToReply({ children, onReply, enabled = true }: { children: ReactNode; onReply: () => void; enabled?: boolean }) {
   const { colors } = useTheme();
   const translation = useSharedValue(0);
   const onReplyRef = useRef(onReply);
@@ -21,6 +21,7 @@ export function SwipeToReply({ children, onReply }: { children: ReactNode; onRep
   const reply = useCallback(() => onReplyRef.current(), []);
   const gesture = useMemo(
     () => Gesture.Pan()
+      .enabled(enabled)
       .activeOffsetX(HORIZONTAL_ACTIVATION)
       .failOffsetY([-VERTICAL_TOLERANCE, VERTICAL_TOLERANCE])
       .onUpdate((event) => {
@@ -32,7 +33,7 @@ export function SwipeToReply({ children, onReply }: { children: ReactNode; onRep
       .onFinalize(() => {
         translation.value = withSpring(0, { damping: 20, stiffness: 200 });
       }),
-    [reply, translation],
+    [enabled, reply, translation],
   );
   const contentStyle = useAnimatedStyle(() => ({ transform: [{ translateX: translation.value }] }));
   const actionStyle = useAnimatedStyle(() => ({ opacity: Math.min(1, translation.value / REPLY_THRESHOLD) }));
