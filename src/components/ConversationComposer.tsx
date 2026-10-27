@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
 import { requestRecordingPermissionsAsync, RecordingPresets, useAudioRecorder, useAudioRecorderState } from 'expo-audio';
-import { Camera, ChevronDown, Clock3, FileText, Film, Image as ImageIcon, Mic, Pause, Paperclip, Play, Send, Smile, Trash2, X, Zap, PanelsTopLeft } from 'lucide-react-native';
+import { Camera, ChevronDown, ClipboardPaste, Clock3, FileText, Film, Image as ImageIcon, Mic, Pause, Paperclip, Play, Send, Smile, Trash2, X, Zap, PanelsTopLeft } from 'lucide-react-native';
 import { useEffect, useRef, useState } from 'react';
 import { AppState, Image, Keyboard, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import {
@@ -12,6 +12,7 @@ import {
   ensureAudioSessionLifecycle,
   releaseRecordingSession,
 } from '../lib/audio-session';
+import { readClipboardImageAttachment } from '../lib/image-clipboard';
 import { showNotice } from './AppToast';
 import { LinearGradient } from 'expo-linear-gradient';
 import { EmojiKeyboard, type EmojiType } from 'rn-emoji-keyboard';
@@ -121,6 +122,10 @@ export function ConversationComposer({
   const [recording, setRecording] = useState(false);
   const [paused, setPaused] = useState(false);
   const [attachmentPickerOpen, setAttachmentPickerOpen] = useState(false);
+  const [pastingImage, setPastingImage] = useState(false);
+  const pasteInFlight = useRef(false);
+  const composerState = useRef({ conversationId, attachments, onAttachments, sending, canSendFreeform });
+  composerState.current = { conversationId, attachments, onAttachments, sending, canSendFreeform };
   const [quickOpen, setQuickOpen] = useState(false);
   const [quickQuery, setQuickQuery] = useState('');
   const [debouncedQuickQuery, setDebouncedQuickQuery] = useState('');
@@ -252,6 +257,31 @@ export function ConversationComposer({
         rejected.length > 4 ? `…and ${rejected.length - 4} more.` : null,
       ].filter(Boolean);
       showNotice('Some files were skipped', lines.join('\n'));
+    }
+  }
+
+  async function pasteImage() {
+    if (pasteInFlight.current || sending || canSendFreeform === false || !onAttachments) return;
+    const sourceConversationId = conversationId;
+    pasteInFlight.current = true;
+    setPastingImage(true);
+    try {
+      const attachment = await readClipboardImageAttachment();
+      if (!attachment) { showNotice('No image available', 'Copy an image first, then paste it here.'); return; }
+      const sizeBytes = await resolveAttachmentSizeBytes(attachment.uri);
+      const error = await getComposerAttachmentValidationError({ mimeType: attachment.mimeType, sizeBytes, channelType: channelType ?? 'WHATSAPP' });
+      if (error) { showNotice('Could not paste image', error); return; }
+      const current = composerState.current;
+      if (current.conversationId !== sourceConversationId || current.sending || current.canSendFreeform === false) return;
+      if (current.attachments.length >= COMPOSER_MAX_ATTACHMENT_COUNT) {
+        showNotice('Attachment limit', `You can attach up to ${COMPOSER_MAX_ATTACHMENT_COUNT} files at once.`); return;
+      }
+      current.onAttachments?.([...current.attachments, { ...attachment, sizeBytes }]);
+    } catch (error) {
+      showNotice('Could not paste image', error instanceof Error ? error.message : 'Please try again.');
+    } finally {
+      pasteInFlight.current = false;
+      setPastingImage(false);
     }
   }
 
@@ -829,6 +859,20 @@ export function ConversationComposer({
           </View>
 
           <View style={styles.attachOptions}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Paste image from clipboard"
+              disabled={pastingImage || sending || canSendFreeform === false || !onAttachments}
+              style={[styles.attachOption, { backgroundColor: colors.surfaceSecondary, borderColor: colors.cardBorder }]}
+              onPress={() => { setAttachmentPickerOpen(false); void pasteImage(); }}
+            >
+              <View style={[styles.attachOptionIcon, { backgroundColor: colors.primarySoft }]}><ClipboardPaste color={colors.primary} size={22} /></View>
+              <View style={styles.attachOptionCopy}>
+                <Text style={[styles.attachOptionTitle, { color: colors.text }]}>{pastingImage ? 'Pasting image...' : 'Paste image'}</Text>
+                <Text style={[styles.attachOptionBody, { color: colors.textSecondary }]}>Add the copied image to your message</Text>
+              </View>
+            </Pressable>
+
             <Pressable
               style={[styles.attachOption, { backgroundColor: colors.surfaceSecondary, borderColor: colors.cardBorder }]}
               onPress={() => void runAttachmentAction(chooseImage)}

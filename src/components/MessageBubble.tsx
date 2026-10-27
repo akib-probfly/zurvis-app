@@ -262,6 +262,7 @@ function StandardMessageBubble({ message, outgoing, attachments, replyPreview, r
       url={previewUrl(imageAttachments[0])}
       style={[styles.image, { backgroundColor: colors.surfaceSecondary }]}
       onPress={() => onImage?.(imageAttachments[0].id)}
+      onLongPress={() => onLongPress?.(imageAttachments[0])}
       fitContent
       maxWidth={referralPreview ? referralImageWidth : 250}
       // Ad cards set the bubble width. Keep portrait media at that same width
@@ -418,9 +419,9 @@ function StandardMessageBubble({ message, outgoing, attachments, replyPreview, r
           <View style={styles.imageGrid}>
             {imageAttachments.slice(0, 4).map((attachment: any, index: number) => (
               <View key={attachment.id} style={styles.gridCell}>
-                <AuthenticatedImage url={previewUrl(attachment)} style={styles.gridImage} onPress={() => onImage?.(attachment.id)} adaptive />
+                <AuthenticatedImage url={previewUrl(attachment)} style={styles.gridImage} onPress={() => onImage?.(attachment.id)} onLongPress={() => onLongPress?.(attachment)} adaptive />
                 {index === 3 && imageAttachments.length > 4 ? (
-                  <Pressable style={styles.gridOverflow} onPress={() => onImage?.(attachment.id)} accessibilityRole="button" accessibilityLabel={`Show ${imageAttachments.length - 3} more images`}>
+                  <Pressable style={styles.gridOverflow} onPress={() => onImage?.(attachment.id)} onLongPress={() => onLongPress?.(attachment)} delayLongPress={350} accessibilityRole="button" accessibilityLabel={`Show ${imageAttachments.length - 3} more images`}>
                     <Text style={styles.gridOverflowText}>+{imageAttachments.length - 3}</Text>
                   </Pressable>
                 ) : null}

@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft, Bot, ChevronDown, Mail, MailOpen, MoreVertical, PackagePlus, Phone, RotateCcw, UserRound } from 'lucide-react-native';
 import * as Clipboard from 'expo-clipboard';
+import { copyImageToClipboard } from '../lib/image-clipboard';
 import Toast from 'react-native-toast-message';
 import { ConversationAssignmentSheet } from '../components/ConversationAssignmentSheet';
 import { ContactDetailsPanel, formatPhoneNumberDisplay, formatUsernameDisplay } from '../components/ContactDetailsPanel';
@@ -190,6 +191,23 @@ export function ConversationScreen() {
   const [gallery, setGallery] = useState<MediaItem[]>([]); const [galleryIndex, setGalleryIndex] = useState(0);
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
   const [reactTarget, setReactTarget] = useState<Message | null>(null);
+  const copyingImage = useRef(false);
+  const copyableImage = reactTarget?.attachments?.find((attachment) =>
+    (attachment.mediaType?.toUpperCase() === 'IMAGE' || attachment.mimeType?.startsWith('image/'))
+    && (attachment.localPreviewUri || attachment.downloadUrl || attachment.previewUrl || attachment.thumbnailUrl));
+  const copySelectedImage = async () => {
+    if (!copyableImage || copyingImage.current) return;
+    const url = apiUrl(copyableImage.localPreviewUri || copyableImage.downloadUrl || copyableImage.previewUrl || copyableImage.thumbnailUrl || null);
+    if (!url) return;
+    copyingImage.current = true;
+    setReactTarget(null);
+    try {
+      await copyImageToClipboard(url);
+      Toast.show({ type: 'copy', text1: 'Image copied', position: 'bottom', visibilityTime: 1600 });
+    } catch (error) {
+      showNotice('Could not copy image', error instanceof Error ? error.message : 'Please try again.');
+    } finally { copyingImage.current = false; }
+  };
   const [olderMessages, setOlderMessages] = useState<Message[]>([]);
   const [olderCursor, setOlderCursor] = useState<string | null>(null);
   const [hasMoreOlder, setHasMoreOlder] = useState(true);
@@ -1463,6 +1481,7 @@ export function ConversationScreen() {
         onClose={() => setReactTarget(null)}
         onPick={(emoji) => { if (reactTarget) reactMutation.mutate({ messageId: reactTarget.id, emoji }); setReactTarget(null); }}
         onReply={(channelType ?? '').toUpperCase() === 'INSTAGRAM' ? undefined : () => { if (reactTarget) setReplyTo(reactTarget); setReactTarget(null); }}
+        onCopyImage={copyableImage ? () => { void copySelectedImage(); } : undefined}
         onCopy={reactTarget?.text ? () => {
           const text = reactTarget.text ?? '';
           setReactTarget(null);
@@ -1535,7 +1554,7 @@ async function sendTemplateMutation(conversationId: string, params: { templateNa
 const SwipeableMessage = memo(function SwipeableMessage({ message, channelName, channelType, channelId, setReplyTo, setReactTarget, onImage, onVideo, replyTarget, reactions, onJumpToMessage, onCreateOrderFromMessage, creatingOrderDraftFor }: { message: Message; channelName?: string | null; channelType?: string | null; channelId?: string | null; setReplyTo: (message: Message) => void; setReactTarget: (message: Message) => void; onImage: (attachId: string) => void; onVideo: (attachment: any) => void; replyTarget: Message | null; reactions?: Array<{ emoji: string; count: number }>; onJumpToMessage?: (messageId: string) => void; onCreateOrderFromMessage?: (message: Message) => void; creatingOrderDraftFor: string | null }) {
   const outgoing = message.direction === 'OUTBOUND';
   const onReply = useCallback(() => setReplyTo(message), [setReplyTo, message]);
-  const onReact = useCallback(() => setReactTarget(message), [setReactTarget, message]);
+  const onReact = useCallback((attachment?: Attachment) => setReactTarget(attachment?.id ? { ...message, attachments: [attachment] } : message), [setReactTarget, message]);
   const replyTargetId = message.replyToMessageId ?? replyTarget?.id ?? message.replyTo?.id ?? null;
   const replyPreview = useMemo(() => {
     const quotedSource = replyTarget ?? message.replyTo;

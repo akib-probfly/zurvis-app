@@ -193,6 +193,7 @@ export function AuthenticatedImage({
   url,
   style,
   onPress,
+  onLongPress,
   resizeMode = 'cover',
   adaptive,
   fitContent,
@@ -204,6 +205,7 @@ export function AuthenticatedImage({
   url: string;
   style: any;
   onPress?: () => void;
+  onLongPress?: () => void;
   resizeMode?: 'cover' | 'contain';
   adaptive?: boolean;
   /** Size the image to its natural aspect ratio within maxWidth/maxHeight (no crop). */
@@ -283,7 +285,7 @@ export function AuthenticatedImage({
       : style;
 
   return (
-    <Pressable disabled={!onPress} onPress={onPress} style={containerStyle}>
+    <Pressable disabled={!onPress && !onLongPress} onPress={onPress} onLongPress={onLongPress} delayLongPress={350} style={containerStyle}>
       {imageSource && !failed ? (
         <ExpoImage
           source={imageSource}

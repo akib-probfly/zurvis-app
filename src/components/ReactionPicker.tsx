@@ -11,12 +11,14 @@ export function ReactionPicker({
   onClose,
   onReply,
   onCopy,
+  onCopyImage,
 }: {
   visible: boolean;
   onPick: (emoji: string) => void;
   onClose: () => void;
   onReply?: () => void;
   onCopy?: () => void;
+  onCopyImage?: () => void;
 }) {
   const { colors } = useTheme();
   useEffect(() => {
@@ -46,6 +48,12 @@ export function ReactionPicker({
               </Pressable>
             ) : null}
           </View>
+          {onCopyImage ? (
+            <Pressable style={[styles.actionButton, { borderColor: colors.cardBorder, marginTop: 12, flex: 0, alignSelf: 'stretch' }]} onPress={() => { onClose(); onCopyImage(); }}>
+              <Copy color={colors.primary} size={20} />
+              <Text style={[styles.actionText, { color: colors.primary }]}>Copy image</Text>
+            </Pressable>
+          ) : null}
         </View>
       </Pressable>
     </Modal>
