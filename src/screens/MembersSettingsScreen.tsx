@@ -1,6 +1,6 @@
 import * as Clipboard from 'expo-clipboard';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Check, ChevronDown, ChevronRight, Copy, Globe2, Layers, Mail, Pencil, RefreshCw, ShieldCheck, Trash2, UserCheck, UserPlus2, UsersRound, UserX, X, type LucideIcon } from 'lucide-react-native';
+import { Check, ChevronDown, ChevronRight, CircleSlash, Copy, Globe2, Layers, Mail, Pencil, RefreshCw, ShieldCheck, Trash2, UserCheck, UserPlus2, UsersRound, UserX, X, type LucideIcon } from 'lucide-react-native';
 import { memo, useCallback, useMemo, useState } from 'react';
 import { FlatList, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
@@ -114,8 +114,9 @@ function AccessPill({ member }: { member: WorkspaceRosterMember }) {
 
   if (channels.length === 0) {
     return (
-      <View style={[styles.accessPill, { backgroundColor: colors.surfaceSecondary, borderColor: colors.cardBorder }]}>
-        <Text style={[styles.accessMuted, { color: colors.textSecondary }]}>Not configured</Text>
+      <View style={[styles.accessPill, styles.noChannelAccess, { backgroundColor: colors.surfaceSecondary, borderColor: colors.cardBorder }]}>
+        <CircleSlash color={colors.textSecondary} size={14} />
+        <Text style={[styles.accessMuted, { color: colors.textSecondary }]}>No channel access</Text>
       </View>
     );
   }
@@ -1281,6 +1282,7 @@ const styles = StyleSheet.create({
   pendingText: { color: '#64748b', flexShrink: 1, fontSize: 11, fontWeight: '700' },
   accessStrong: { fontSize: 11, fontWeight: '800' },
   accessMuted: { flexShrink: 1, fontSize: 11, fontWeight: '600' },
+  noChannelAccess: { paddingHorizontal: 7, paddingVertical: 3, gap: 5 },
   singleChannel: { alignItems: 'center', alignSelf: 'flex-start', borderRadius: 999, flexDirection: 'row', gap: 7, marginTop: 6, maxWidth: '100%', paddingHorizontal: 8, paddingVertical: 5 },
   channelName: { flexShrink: 1, fontSize: 11, fontWeight: '800' },
   multiChannel: { alignItems: 'center', flexDirection: 'row', gap: 8, marginTop: 7 },
