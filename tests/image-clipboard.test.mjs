@@ -58,3 +58,28 @@ test('pasted PNG files respect the existing channel image limits', async () => {
   assert.match(await getComposerAttachmentValidationError({ mimeType: 'image/png', sizeBytes: 6 * 1024 * 1024, channelType: 'WHATSAPP' }), /smaller/);
   assert.match(await getComposerAttachmentValidationError({ mimeType: 'image/png', sizeBytes: 4 * 1024 * 1024, channelType: 'TIKTOK' }), /smaller/);
 });
+
+test('native input paste accepts cached image files and deduplicates them without treating text URLs as images', () => {
+  const { nativePastedImageCandidates } = application()('src/lib/composer-image-paste');
+  const files = nativePastedImageCandidates(['file:///cache/photo.JPG', 'file:///cache/photo.JPG', 'file:///cache/sticker.gif', 'https://example/image.png']);
+  assert.equal(files.length, 2);
+  assert.equal(files[0].mimeType, 'image/jpeg');
+  assert.equal(files[1].mimeType, 'image/gif');
+  assert.equal(files[0].type, 'IMAGE');
+});
+
+test('native image-paste wrapper forwards media events while preserving the original text input', () => {
+  const child = { type: 'TextInput', props: { value: 'caption' } };
+  for (const available of [true, false]) {
+    const { ImagePasteInput } = application({ expo: { requireOptionalNativeModule: () => available ? {} : null },
+      'expo-paste-input': { TextInputWrapper: 'NativePasteWrapper' } })('src/components/ImagePasteInput');
+    const events = [];
+    const result = ImagePasteInput({ children: child, onPaste: (event) => events.push(event) });
+    if (!available) { assert.equal(result, child); continue; }
+    assert.equal(result.type, 'NativePasteWrapper');
+    assert.equal(result.props.children, child);
+    const payload = { type: 'images', uris: ['file:///cache/image.png'] };
+    result.props.onPaste(payload);
+    assert.deepEqual(events, [payload]);
+  }
+});

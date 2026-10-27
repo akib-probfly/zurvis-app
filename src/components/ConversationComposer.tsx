@@ -13,6 +13,8 @@ import {
   releaseRecordingSession,
 } from '../lib/audio-session';
 import { readClipboardImageAttachment } from '../lib/image-clipboard';
+import { nativePastedImageCandidates } from '../lib/composer-image-paste';
+import { ImagePasteInput } from './ImagePasteInput';
 import { showNotice } from './AppToast';
 import { LinearGradient } from 'expo-linear-gradient';
 import { EmojiKeyboard, type EmojiType } from 'rn-emoji-keyboard';
@@ -208,6 +210,7 @@ export function ConversationComposer({
       sizeBytes?: number | null;
     }>,
   ) {
+    const sourceConversationId = conversationId;
     const remaining = Math.max(0, COMPOSER_MAX_ATTACHMENT_COUNT - attachments.length);
     if (remaining <= 0) {
       showNotice('Attachment limit', `You can attach up to ${COMPOSER_MAX_ATTACHMENT_COUNT} files at once.`);
@@ -245,7 +248,10 @@ export function ConversationComposer({
     }
 
     if (accepted.length) {
-      onAttachments?.([...attachments, ...accepted]);
+      const current = composerState.current;
+      if (current.conversationId !== sourceConversationId || current.sending || current.canSendFreeform === false) return;
+      const slots = Math.max(0, COMPOSER_MAX_ATTACHMENT_COUNT - current.attachments.length);
+      current.onAttachments?.([...current.attachments, ...accepted.slice(0, slots)]);
     }
 
     if (skippedForLimit > 0 || rejected.length) {
@@ -748,6 +754,12 @@ export function ConversationComposer({
             })}
           </ScrollView>
         ) : null}
+        <ImagePasteInput onPaste={(payload) => {
+          if (payload.type !== 'images' || !canComposeFreeform || sending || !onAttachments) return;
+          void appendValidatedAttachments(nativePastedImageCandidates(payload.uris)).catch((error) => {
+            showNotice('Could not paste image', error instanceof Error ? error.message : 'Please try again.');
+          });
+        }}>
         <TextInput
           multiline
           scrollEnabled
@@ -760,6 +772,7 @@ export function ConversationComposer({
           placeholderTextColor={colors.textMuted}
           style={[styles.input, { color: colors.textSecondary }]}
         />
+        </ImagePasteInput>
         <View style={styles.actions}>
           {isMessengerChannel ? (
              <Pressable style={[styles.messengerModeChip, { backgroundColor: colors.surface, borderColor: colors.cardBorder }]} onPress={() => setMessengerModeOpen(true)}>
