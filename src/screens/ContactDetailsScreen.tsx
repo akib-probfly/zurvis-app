@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import * as Clipboard from 'expo-clipboard';
-import { AlertTriangle, Ban, Copy, Globe, Mail, MessageSquareText, Phone, Plus, Search, Trash2, X } from 'lucide-react-native';
+import { AlertTriangle, Ban, Copy, Globe, Mail, Phone, Plus, Search, Trash2, X } from 'lucide-react-native';
 import { useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
@@ -29,6 +29,7 @@ import {
 import { banCrmContact, createWorkspaceTag, fetchWorkspaceTags, unbanCrmContact } from '../api/conversationDetails';
 import { isApiErrorWithStatus } from '../api/client';
 import { ChannelLogo } from '../components/ChannelLogo';
+import { ChatIcon } from '../components/ChatIcon';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { ColorfulAvatar } from '../components/ColorfulAvatar';
 import { ErrorState } from '../components/ErrorState';
@@ -331,7 +332,7 @@ export function ContactDetailsScreen() {
         onBack={() => navigation.goBack()}
         right={
           <Pressable style={[styles.messageButton, { backgroundColor: colors.surfaceSecondary }]} onPress={openLatestConversation}>
-            <MessageSquareText color={colors.primary} size={18} />
+            <ChatIcon color={colors.primary} size={18} />
           </Pressable>
         }
       />

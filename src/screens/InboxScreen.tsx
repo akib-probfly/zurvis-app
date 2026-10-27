@@ -3,7 +3,7 @@ import { ArrowDownLeft, ArrowUpRight, Ban, Check, CheckCircle2, CircleSlash, Cir
 import { Animated, Easing, FlatList, Pressable, ScrollView, StyleSheet, Text, TextInput, View, RefreshControl } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useIsFocused, useNavigation } from '@react-navigation/native';
-import Svg, { Path } from 'react-native-svg';
+import { ChatIcon } from '../components/ChatIcon';
 import { AppToggle } from '../components/AppToggle';
 import { BottomSheet, SheetScrollView } from '../components/BottomSheet';
 import { ColorfulAvatar } from '../components/ColorfulAvatar';
@@ -388,9 +388,7 @@ export function InboxScreen() {
         </View>
         <View style={styles.sidebarTabs}>
           <Pressable style={styles.sidebarTab} onPress={() => setSidebarTab('chats')}>
-            <Svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke={sidebarTab === 'chats' ? colors.primary : colors.textMuted} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-              <Path d="M8 9h8 M8 13h6 M18 4a3 3 0 0 1 3 3v8a3 3 0 0 1 -3 3h-5l-5 3v-3h-2a3 3 0 0 1 -3 -3v-8a3 3 0 0 1 3 -3h12z" />
-            </Svg>
+            <ChatIcon color={sidebarTab === 'chats' ? colors.primary : colors.textMuted} size={15} />
             <Text style={[styles.sidebarTabText, { color: sidebarTab === 'chats' ? colors.primary : colors.textMuted }]}>Chats</Text>
             {chatsUnreadCount > 0 ? (
               <Text style={[styles.sidebarTabCount, { backgroundColor: colors.primary, color: colors.primaryText }]}>
