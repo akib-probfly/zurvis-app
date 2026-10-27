@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { useNavigation, usePreventRemove, useRoute, type NavigationProp, type RouteProp } from '@react-navigation/native';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useNavigation, usePreventRemove, useRoute, type RouteProp } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { ChevronDown, ChevronUp, Save } from 'lucide-react-native';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -11,6 +12,7 @@ import { fetchWorkspaceKnowledgeBases, knowledgeBaseQueryKeys } from '../api/kno
 import { useAiAgentAccess, useAiAgentMutation, useAiAgents, useAiAgentTemplates } from '../hooks/useAiAgents';
 import { AGENT_CAPABILITIES, AGENT_INTENTS, agentFormError, agentFormInput, formFromAgent, formFromTemplate, type AgentForm } from '../lib/ai-agent-form';
 import type { SettingsStackParamList } from '../navigation/SettingsStack';
+import { knowledgeDraftFromBase, saveAgentKnowledgeDraft, type AgentKnowledgeDraft } from '../lib/ai-agent-knowledge-draft';
 import { AiAgentChoice } from '../components/AiAgentChoice';
 import { AiAgentKnowledgeEditor } from '../components/AiAgentKnowledgeEditor';
 import { ChannelLogo } from '../components/ChannelLogo';
@@ -23,9 +25,10 @@ import { spacing } from '../theme/tokens';
 import type { ReactNode } from 'react';
 
 export function AiAgentFormScreen() {
-  const navigation = useNavigation<NavigationProp<SettingsStackParamList>>();
+  const navigation = useNavigation<NativeStackNavigationProp<SettingsStackParamList>>();
   const route = useRoute<RouteProp<SettingsStackParamList, 'AiAgentForm'>>();
   const access = useAiAgentAccess();
+  const queryClient = useQueryClient();
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const agents = useAiAgents(access.workspaceId, access.canRead);
@@ -40,19 +43,32 @@ export function AiAgentFormScreen() {
   const [leaveAllowed, setLeaveAllowed] = useState(false);
   const [knowledgeOpen, setKnowledgeOpen] = useState(false);
   const [knowledgeCreate, setKnowledgeCreate] = useState(false);
+  const [knowledgeDraft, setKnowledgeDraft] = useState<AgentKnowledgeDraft | null>(null);
   const [channelSearch, setChannelSearch] = useState('');
   const initializedScope = useRef<string | null>(null);
+  const savedSuccessfully = useRef(false);
   useEffect(() => {
     if (!access.canRead || !access.workspaceId || initializedScope.current === access.workspaceId) return;
     const next = agent ? formFromAgent(agent) : !route.params.agentId && template ? formFromTemplate(template) : null;
-    if (next) { setForm(next); setInitial(JSON.stringify(next)); initializedScope.current = access.workspaceId; }
+    if (next) { setKnowledgeDraft(null); setKnowledgeOpen(false); setForm(next); setInitial(JSON.stringify(next)); initializedScope.current = access.workspaceId; }
   }, [access.canRead, access.workspaceId, agent, template, route.params.agentId]);
   const currentScope = initializedScope.current === access.workspaceId;
   const save = useAiAgentMutation(async (value: AgentForm) => {
     if (!access.canUpdate || !currentScope) throw new Error('Workspace access changed. Reopen this agent.');
     const error = agentFormError(value, Boolean(agent?.aiApiKeyConfigured));
     if (error) throw new Error(error);
-    const input = agentFormInput(value);
+    let knowledgeBaseId = value.knowledgeBaseId;
+    if (knowledgeDraft) {
+      try {
+        knowledgeBaseId = await saveAgentKnowledgeDraft(knowledgeDraft, access.workspaceId!, value.channelIds[0], (progress) => {
+          setKnowledgeDraft(progress);
+          if (progress.base) setForm((previous) => previous ? { ...previous, knowledgeBaseId: progress.base!.id } : null);
+        });
+      } finally {
+        void queryClient.invalidateQueries({ queryKey: knowledgeBaseQueryKeys.all });
+      }
+    }
+    const input = agentFormInput({ ...value, knowledgeBaseId });
     if (route.params.agentId) {
       const { agentType: _type, ...update } = input;
       void _type;
@@ -60,10 +76,14 @@ export function AiAgentFormScreen() {
     }
     return createAiAgent(input);
   });
-  const dirty = Boolean(form && JSON.stringify(form) !== initial);
+  const dirty = Boolean(knowledgeDraft || (form && JSON.stringify(form) !== initial));
   // Covers the header, Android back button, and iOS swipe-back.
   usePreventRemove((dirty || save.isPending) && !leaveAllowed, () => { if (!save.isPending) setDiscard(true); });
-  useEffect(() => { if (leaveAllowed) navigation.goBack(); }, [leaveAllowed, navigation]);
+  useEffect(() => {
+    if (!leaveAllowed) return;
+    if (savedSuccessfully.current) navigation.popTo('AiAgents');
+    else navigation.goBack();
+  }, [leaveAllowed, navigation]);
   const setField = <K extends keyof AgentForm>(key: K, value: AgentForm[K]) => setForm((previous) => previous ? { ...previous, [key]: value } : null);
   const editable = access.canUpdate && currentScope && !save.isPending;
   const selectedKnowledge = knowledge.data?.find((base) => base.id === form?.knowledgeBaseId);
@@ -72,10 +92,12 @@ export function AiAgentFormScreen() {
   const submit = () => {
     if (!form || !editable) return;
     save.mutate(form, { onSuccess: () => {
+      setKnowledgeDraft(null);
       setInitial(JSON.stringify(form));
       Toast.show({ type: 'success', text1: 'Agent draft saved', text2: 'Activate it from AI Agents when you are ready.' });
+      savedSuccessfully.current = true;
       setLeaveAllowed(true);
-    }, onError: (error) => Toast.show({ type: 'error', text1: 'Could not save agent', text2: error.message }) });
+    }, onError: (error) => Toast.show({ type: 'error', text1: 'Could not save agent', text2: `${error.message} Completed knowledge changes have been kept; retry to finish.` }) });
   };
   return <View style={[styles.screen, { backgroundColor: colors.background }]}>
     <ScreenHeader title={route.params.agentId ? 'Edit AI agent' : 'Create AI agent'} onBack={() => navigation.goBack()} />
@@ -115,13 +137,14 @@ export function AiAgentFormScreen() {
                 {!channels.isPending && !channels.isError && !visibleChannels.length ? <AppText tone="secondary">No matching connected channels.</AppText> : null}
                 {form.channelIds.filter((id) => !availableChannels.some((channel) => channel.id === id)).map((id) => <AiAgentChoice key={id} label={agent?.deployments.find((deployment) => deployment.channelId === id)?.channel.name ?? 'Unavailable channel'} description="Not currently connected" selected disabled={!editable} onPress={() => setField('channelIds', form.channelIds.filter((current) => current !== id))} />)}
               </AgentSection>
-              <AgentSection title="Knowledge base" summary={selectedKnowledge?.name ?? agent?.knowledgeBase?.name ?? 'None'}>
+              <AgentSection title="Knowledge base" summary={knowledgeDraft?.name || selectedKnowledge?.name || 'None'}>
                 {knowledge.isPending ? <AppText tone="secondary">Loading knowledge bases...</AppText> : knowledge.isError ? <ErrorState message="Could not load knowledge bases." onRetry={() => knowledge.refetch()} /> : <>
-                  <AiAgentChoice label="No knowledge base" selected={!form.knowledgeBaseId} disabled={!editable} onPress={() => setField('knowledgeBaseId', null)} />
-                  {(knowledge.data ?? []).map((base) => <AiAgentChoice key={base.id} label={base.name} description={`${base._count?.entries ?? base.entries?.length ?? 0} entries · ${base._count?.sources ?? base.sources?.length ?? 0} files`} selected={form.knowledgeBaseId === base.id} disabled={!editable} onPress={() => setField('knowledgeBaseId', base.id)} />)}
+                  <AiAgentChoice label="No knowledge base" selected={!form.knowledgeBaseId && !knowledgeDraft} disabled={!editable} onPress={() => { setKnowledgeDraft(null); setField('knowledgeBaseId', null); }} />
+                  {(knowledge.data ?? []).map((base) => <AiAgentChoice key={base.id} label={base.name} description={`${base._count?.entries ?? base.entries?.length ?? 0} entries · ${base._count?.sources ?? base.sources?.length ?? 0} files`} selected={form.knowledgeBaseId === base.id} disabled={!editable} onPress={() => { setKnowledgeDraft(null); setField('knowledgeBaseId', base.id); }} />)}
                 </>}
-                {selectedKnowledge ? <AppButton label={access.canUpdate ? 'Manage knowledge' : 'View knowledge'} variant="secondary" disabled={save.isPending} onPress={() => { setKnowledgeCreate(false); setKnowledgeOpen(true); }} /> : null}
+                {selectedKnowledge || knowledgeDraft ? <AppButton label={access.canUpdate ? 'Manage knowledge' : 'View knowledge'} variant="secondary" disabled={save.isPending} onPress={() => { setKnowledgeCreate(!knowledgeDraft?.base && Boolean(knowledgeDraft)); setKnowledgeOpen(true); }} /> : null}
                 <AppButton label="Create knowledge base" variant="secondary" disabled={!editable || !form.channelIds.length} onPress={() => { setKnowledgeCreate(true); setKnowledgeOpen(true); }} />
+                {knowledgeDraft ? <AppText variant="small" tone="secondary">Knowledge changes are pending. Save the agent draft to apply them.</AppText> : null}
                 {!form.channelIds.length ? <AppText variant="small" tone="secondary">Select a channel before creating a knowledge base.</AppText> : null}
               </AgentSection>
               <AgentSection title="AI provider" summary={form.providerMode === 'CUSTOM' ? 'Custom' : 'Platform'}>
@@ -134,9 +157,13 @@ export function AiAgentFormScreen() {
               </AgentSection>
               {access.canUpdate ? <AppButton label="Save draft" icon={Save} loading={save.isPending} disabled={!editable} block onPress={submit} /> : null}
             </ScrollView>
-            {knowledgeOpen ? <AiAgentKnowledgeEditor visible base={knowledgeCreate ? null : selectedKnowledge ?? null} workspaceId={access.workspaceId!} channelId={form.channelIds[0]} canUpdate={editable}
-              onClose={() => setKnowledgeOpen(false)} onCreated={(base) => { setField('knowledgeBaseId', base.id); setKnowledgeCreate(false); }} />
-              : null}
+            {knowledgeOpen ? <AiAgentKnowledgeEditor visible
+              draft={knowledgeCreate ? (knowledgeDraft && !knowledgeDraft.base ? knowledgeDraft : knowledgeDraftFromBase(null)) : knowledgeDraft ?? knowledgeDraftFromBase(selectedKnowledge ?? null)}
+              canUpdate={editable} onClose={() => setKnowledgeOpen(false)} onDone={(draft) => {
+                setKnowledgeDraft(draft);
+                setField('knowledgeBaseId', draft.base?.id ?? null);
+                setKnowledgeOpen(false);
+              }} /> : null}
           </KeyboardAvoidingView>}
     <ConfirmDialog visible={discard} title="Discard changes?" body="Your unsaved agent changes will be lost." confirmLabel="Discard" destructive onClose={() => setDiscard(false)} onConfirm={() => { setDiscard(false); setLeaveAllowed(true); }} />
   </View>;

@@ -1,8 +1,10 @@
 import { useQuery } from '@tanstack/react-query';
-import { Archive, Mail, MailOpen, RotateCcw, Search, Star, X } from 'lucide-react-native';
-import { useEffect, useMemo, useState } from 'react';
+import { Archive, Bot, Mail, MailOpen, RotateCcw, Search, Star, X } from 'lucide-react-native';
+import { useEffect, useMemo, useState, useSyncExternalStore } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
-import { fetchAssigneeOptions, type AssigneeFilterOption } from '../api/inbox';
+import { fetchAssigneeOptions, type AssigneeFilterOption, type ConversationAiAgent } from '../api/inbox';
+import { latestAccessToken, subscribeAccessToken } from '../api/client';
+import { useWorkspaceAccess } from '../lib/workspace-access';
 import { useAuth } from '../auth/AuthContext';
 import { useTheme } from '../theme/ThemeContext';
 import { BottomSheet, SheetScrollView } from './BottomSheet';
@@ -22,6 +24,8 @@ type Props = {
   workspaceId?: string | null;
   channelId?: string | null;
   assignee: ConversationAssignee;
+  assignedAiAgent?: ConversationAiAgent | null;
+  activeAiAgent?: { id: string; name: string } | null;
   status?: string | null;
   unreadCount?: number;
   isStarred?: boolean;
@@ -30,7 +34,7 @@ type Props = {
   isUpdatingStatus?: boolean;
   isUpdatingStar?: boolean;
   errorMessage?: string | null;
-  onAssign: (member: AssigneeFilterOption | null) => void;
+  onAssign: (member: AssigneeFilterOption | null, aiAgentId?: string | null) => void;
   onToggleRead: () => void;
   onToggleStatus: () => void;
   onToggleStar: () => void;
@@ -58,6 +62,8 @@ export function ConversationAssignmentSheet({
   workspaceId,
   channelId,
   assignee,
+  assignedAiAgent,
+  activeAiAgent,
   status,
   unreadCount = 0,
   isStarred = false,
@@ -73,6 +79,15 @@ export function ConversationAssignmentSheet({
 }: Props) {
   const { colors } = useTheme();
   const { session } = useAuth();
+  const { workspace } = useWorkspaceAccess();
+  const token = useSyncExternalStore(subscribeAccessToken, () => latestAccessToken);
+  const canAssignAi = useMemo(() => {
+    let claims: { permissions?: string[]; workspaceId?: string } = {};
+    try { claims = JSON.parse(globalThis.atob(token?.split('.')[1]?.replace(/-/g, '+').replace(/_/g, '/') ?? '')); } catch { /* No assignment access without a valid workspace scope. */ }
+    return claims.workspaceId === workspaceId && (
+      (workspace?.id === workspaceId && (workspace?.roleKeys ?? []).some((role) => ['super_admin', 'workspace_admin', 'workspace_manager'].includes(role)))
+      || (claims.permissions ?? []).includes('conversation.assign.any'));
+  }, [token, workspace, workspaceId]);
   const [agentSearch, setAgentSearch] = useState('');
   const [tab, setTab] = useState<SheetTab>('assignment');
   const isClosed = status === 'CLOSED';
@@ -91,7 +106,9 @@ export function ConversationAssignmentSheet({
     () => members.find((member) => member.email.toLowerCase() === currentUserEmail) ?? null,
     [members, currentUserEmail],
   );
-  const assigneeLabel = assignee?.userName ?? assignee?.userEmail ?? 'Unassigned';
+  const unavailableAi = assignedAiAgent && (assignedAiAgent.status !== 'ACTIVE' || activeAiAgent?.id !== assignedAiAgent.id);
+  const assigneeLabel = assignee?.userName ?? assignee?.userEmail
+    ?? (assignedAiAgent ? `${unavailableAi ? 'AI Agent unavailable' : 'AI Agent'} ? ${assignedAiAgent.name}` : 'Unassigned');
   const visibleMembers = useMemo(() => {
     const query = agentSearch.trim().toLowerCase();
     if (!query) return members;
@@ -131,20 +148,22 @@ export function ConversationAssignmentSheet({
         {tab === 'assignment' ? (
           <>
             <View style={[styles.currentCard, { backgroundColor: colors.surfaceSecondary }]}>
-              {assignee ? (
+              {assignee || assignedAiAgent ? (
                 <View style={[styles.currentChip, { backgroundColor: colors.background }]}>
+                  {assignee ? (
                   <ColorfulAvatar
                     name={assigneeLabel}
                     size={28}
                     url={assignee.avatarUrl ?? null}
                     allowColorful={false}
                   />
+                  ) : <Bot color={colors.primary} size={28} />}
                   <Text style={[styles.currentName, { color: colors.text }]} numberOfLines={1}>{assigneeLabel}</Text>
                   <Pressable
                     accessibilityLabel="Unassign conversation"
-                    disabled={isUpdating || isClosed}
+                    disabled={isUpdating || isClosed || (!assignee && !canAssignAi)}
                     hitSlop={8}
-                    onPress={() => onAssign(null)}
+                    onPress={() => onAssign(null, null)}
                     style={[styles.unassign, { backgroundColor: colors.textMuted }, (isUpdating || isClosed) && styles.disabled]}
                   >
                     <X color="#fff" size={12} />
@@ -171,6 +190,20 @@ export function ConversationAssignmentSheet({
                   <Text style={[styles.assignMeText, { color: colors.text }]}>Assign to me</Text>
                 </View>
                 <Text style={[styles.assignMeHint, { color: colors.textMuted }]} numberOfLines={1}>{currentUserLabel}</Text>
+              </Pressable>
+            ) : null}
+
+            {canAssignAi && activeAiAgent ? (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={`Assign to AI Agent ${activeAiAgent.name}`}
+                disabled={isUpdating || isClosed || assignedAiAgent?.id === activeAiAgent.id}
+                onPress={() => onAssign(null, activeAiAgent.id)}
+                style={[styles.assignMe, { backgroundColor: colors.surfaceSecondary, borderColor: colors.cardBorder },
+                  (isUpdating || isClosed || assignedAiAgent?.id === activeAiAgent.id) && styles.disabled]}
+              >
+                <View style={styles.assignMeLeft}><Bot color={colors.primary} size={28} /><Text style={[styles.assignMeText, { color: colors.text }]}>AI Agent</Text></View>
+                <Text style={[styles.assignMeHint, { color: colors.textMuted }]} numberOfLines={1}>{activeAiAgent.name}</Text>
               </Pressable>
             ) : null}
 

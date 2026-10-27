@@ -13,11 +13,12 @@ import { ListSkeleton } from '../components/Skeleton';
 import { useTheme } from '../theme/ThemeContext';
 import { spacing } from '../theme/tokens';
 
-export function AiAgentsScreen() {
+export function AiAgentsScreen() { return <AiAgentsContent catalog={false} />; }
+export function AiAgentCatalogScreen() { return <AiAgentsContent catalog />; }
+function AiAgentsContent({ catalog }: { catalog: boolean }) {
   const navigation = useNavigation<NavigationProp<SettingsStackParamList>>();
   const { colors } = useTheme();
   const access = useAiAgentAccess();
-  const [catalog, setCatalog] = useState(false);
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('All');
   const agents = useAiAgents(access.workspaceId, access.canRead);
@@ -34,11 +35,16 @@ export function AiAgentsScreen() {
     });
   };
   return <View style={[styles.screen, { backgroundColor: colors.background }]}>
-    <ScreenHeader title={catalog ? 'Agent catalog' : 'AI Agents'} onBack={() => catalog ? (setCatalog(false), setSearch('')) : navigation.goBack()}
-      right={!catalog && access.canUpdate ? <AppButton label="Add agent" icon={Plus} size="sm" onPress={() => { setSearch(''); setCatalog(true); }} /> : undefined} />
+    <ScreenHeader title={catalog ? 'Agent catalog' : 'AI Agents'} onBack={() => navigation.goBack()}
+      right={!catalog && access.canUpdate ? <AppButton label="Add agent" icon={Plus} size="sm" onPress={() => navigation.navigate('AiAgentCatalog')} /> : undefined} />
     {access.loading ? <ListSkeleton rows={4} /> : access.error ? <ErrorState message="Could not load workspace access." onRetry={() => access.refetch()} /> : !access.canRead ? <EmptyState icon={Bot} title="Access unavailable" message="You need workspace settings access to view AI agents." /> : <>
       <View style={styles.controls}>
-        {!catalog ? <AppText variant="small" tone="secondary">{agents.data?.length ?? 0} agents · {agents.data?.filter((agent) => agent.status === 'ACTIVE').length ?? 0} active</AppText> : null}
+        {!catalog ? <View style={styles.row}>
+          <AppBadge label={`${agents.data?.length ?? 0} total`} tone="neutral" />
+          <AppBadge label={`${agents.data?.filter((agent) => agent.status === 'ACTIVE').length ?? 0} active`} tone="success" />
+          <AppBadge label={`${agents.data?.filter((agent) => agent.status === 'PAUSED').length ?? 0} paused`} tone="warning" />
+          <AppBadge label={`${agents.data?.filter((agent) => agent.status === 'DRAFT').length ?? 0} drafts`} tone="info" />
+        </View> : null}
         <AppSearchField fill={false} value={search} onChangeText={setSearch} placeholder={catalog ? 'Search agent templates' : 'Search agents'} />
         {catalog ? <View style={styles.row}>{['All', 'Sales', 'Customer support', 'Custom'].map((label) => <AppChip key={label} label={label} selected={category === label} onPress={() => setCategory(label)} />)}</View> : null}
       </View>
@@ -50,7 +56,7 @@ export function AiAgentsScreen() {
         </AppCard>} /> : <FlatList data={items} keyExtractor={(item) => item.id} contentContainerStyle={styles.content}
           refreshing={agents.isRefetching} onRefresh={() => { void agents.refetch(); }}
           ListEmptyComponent={<EmptyState icon={Bot} title={search ? 'No matching agents' : 'No agents yet'} message={search ? 'Try another name or category.' : 'Choose a Sales or Support template, or create a custom agent.'}
-            action={!search && access.canUpdate ? <AppButton label="Browse catalog" onPress={() => setCatalog(true)} /> : undefined} />}
+            action={!search && access.canUpdate ? <AppButton label="Browse catalog" onPress={() => navigation.navigate('AiAgentCatalog')} /> : undefined} />}
           renderItem={({ item }) => <AppCard style={styles.card}>
             <View style={styles.heading}><Bot size={22} color={colors.primary} /><View style={styles.copy}><AppText variant="section">{item.name}</AppText><AppText variant="small" tone="secondary">{agentTypeLabel(item.agentType)}</AppText></View>
               <AppBadge label={item.status === 'ACTIVE' ? 'Active' : item.status === 'PAUSED' ? 'Paused' : 'Draft'} tone={item.status === 'ACTIVE' ? 'success' : item.status === 'PAUSED' ? 'warning' : 'neutral'} />

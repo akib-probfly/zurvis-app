@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft, ChevronDown, Mail, MailOpen, MoreVertical, PackagePlus, Phone, RotateCcw, UserRound } from 'lucide-react-native';
+import { ArrowLeft, Bot, ChevronDown, Mail, MailOpen, MoreVertical, PackagePlus, Phone, RotateCcw, UserRound } from 'lucide-react-native';
 import * as Clipboard from 'expo-clipboard';
 import Toast from 'react-native-toast-message';
 import { ConversationAssignmentSheet } from '../components/ConversationAssignmentSheet';
@@ -708,23 +708,19 @@ export function ConversationScreen() {
     onError: (error: Error) => showNotice('Could not update conversation status', error.message || 'Please try again.'),
   });
   const assignmentMutation = useMutation({
-    mutationFn: (assignee: AssigneeFilterOption | null) => updateConversationAssignment(route.params.conversationId, assignee?.workspaceMemberId ?? null),
-    onSuccess: (_, assignee) => {
-      setHeader((c) => ({
-        ...c,
-        conversation: {
-          ...(c.conversation ?? {}),
-          assignee: assignee
-            ? {
-                workspaceMemberId: assignee.workspaceMemberId,
-                userName: assignee.name,
-                userEmail: assignee.email,
-                avatarUrl: assignee.avatarUrl,
-              }
-            : null,
-        },
-      }));
-      queryClient.invalidateQueries({ queryKey: ['conversations'] });
+    mutationFn: ({ member, aiAgentId }: { member: AssigneeFilterOption | null; aiAgentId?: string | null }) =>
+      updateConversationAssignment(route.params.conversationId, member?.workspaceMemberId ?? null, aiAgentId),
+    onSuccess: (updated) => {
+      const patch = { assignee: updated.assignee ?? null, assignedAiAgent: updated.assignedAiAgent ?? null, status: updated.status };
+      setHeader((current) => ({ ...current, status: updated.status, conversation: { ...(current.conversation ?? {}), ...patch } }));
+      queryClient.setQueryData(['messages', route.params.conversationId], (current: any) =>
+        current?.conversation ? { ...current, conversation: { ...current.conversation, ...patch } } : current);
+      queryClient.setQueriesData({ queryKey: ['conversations'] }, (current: any) => !current?.pages ? current : {
+        ...current, pages: current.pages.map((page: any) => ({ ...page, items: (page.items ?? []).map((item: any) =>
+          item.id === route.params.conversationId ? { ...item, ...patch } : item) })),
+      });
+      void queryClient.invalidateQueries({ queryKey: ['conversations'] });
+      void queryClient.invalidateQueries({ queryKey: ['messages', route.params.conversationId] });
       void queryClient.invalidateQueries({ queryKey: ['assignment-events', route.params.conversationId], refetchType: 'all' });
     },
     onError: (error: Error) => showNotice('Could not update assignment', error.message),
@@ -1358,7 +1354,9 @@ export function ConversationScreen() {
           >
             {header.unreadCount > 0 ? <Mail color={colors.textSecondary} size={19} /> : <MailOpen color={colors.textSecondary} size={19} />}
           </Pressable>
-          <Pressable onPress={() => setAssignmentOpen(true)} hitSlop={6}><UserRound color={colors.textSecondary} size={19} /></Pressable>
+          <Pressable onPress={() => setAssignmentOpen(true)} hitSlop={6} accessibilityLabel={header.conversation?.assignedAiAgent ? `Assigned to AI Agent ${header.conversation.assignedAiAgent.name}` : 'Conversation assignment'}>
+            {header.conversation?.assignedAiAgent ? <Bot color={colors.primary} size={19} /> : <UserRound color={colors.textSecondary} size={19} />}
+          </Pressable>
           <Pressable onPress={() => setDetailsOpen(true)} hitSlop={6}><MoreVertical color={colors.textSecondary} size={19} /></Pressable>
         </View>
       </View>
@@ -1481,6 +1479,8 @@ export function ConversationScreen() {
         workspaceId={header.conversation?.workspaceId ?? route.params.workspaceId}
         channelId={channelId}
         assignee={header.conversation?.assignee ?? null}
+        assignedAiAgent={header.conversation?.assignedAiAgent ?? null}
+        activeAiAgent={header.conversation?.channel?.activeAiAgent ?? null}
         status={header.status}
         unreadCount={header.unreadCount}
         isStarred={header.isStarred}
@@ -1489,7 +1489,7 @@ export function ConversationScreen() {
         isUpdatingStatus={statusMutation.isPending}
         isUpdatingStar={starMutation.isPending}
         errorMessage={assignmentMutation.error instanceof Error ? assignmentMutation.error.message : null}
-        onAssign={(member) => assignmentMutation.mutate(member)}
+        onAssign={(member, aiAgentId) => assignmentMutation.mutate({ member, aiAgentId })}
         onToggleRead={() => {
           if (readMutation.isPending || unreadMutation.isPending) return;
           if (header.unreadCount > 0) {

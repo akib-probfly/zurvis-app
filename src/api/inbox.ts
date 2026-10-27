@@ -77,6 +77,8 @@ export type ConversationLastInteraction =
       call: ConversationCallSession;
     };
 
+export type ConversationAiAgent = { id: string; name: string; status: string };
+
 export type ConversationListItem = {
   id: string;
   workspaceId: string;
@@ -91,8 +93,9 @@ export type ConversationListItem = {
   lastInteraction?: ConversationLastInteraction | null;
   blockedAt?: string | null;
   contact: { id: string; displayName: string | null; avatarUrl: string | null; primaryPhone?: string | null; username?: string | null; blockedAt?: string | null };
-  channel: { channelId: string; channelType: string; channelName: string; displayPhoneNumber: string | null };
+  channel: { channelId: string; channelType: string; channelName: string; displayPhoneNumber: string | null; activeAiAgent?: { id: string; name: string } | null };
   assignee?: { workspaceMemberId: string; userName: string | null; userEmail: string; avatarUrl: string | null } | null;
+  assignedAiAgent?: ConversationAiAgent | null;
   messaging?: ConversationMessaging | null;
   tags?: ConversationListTag[] | null;
 };
@@ -226,10 +229,10 @@ export async function fetchConversationUnreadCount(params: Omit<ConversationsFil
   return response?.count ?? response?.unreadCount ?? response?.total ?? 0;
 }
 
-export async function updateConversationAssignment(conversationId: string, assigneeWorkspaceMemberId: string | null) {
-  return apiFetch(`/conversations/${conversationId}/assignment`, {
+export async function updateConversationAssignment(conversationId: string, assigneeWorkspaceMemberId: string | null, assigneeAiAgentId?: string | null) {
+  return apiFetch<ConversationListItem>(`/conversations/${conversationId}/assignment`, {
     method: 'PATCH',
-    body: JSON.stringify({ assigneeWorkspaceMemberId }),
+    body: JSON.stringify({ assigneeWorkspaceMemberId, ...(assigneeAiAgentId !== undefined ? { assigneeAiAgentId } : {}) }),
   });
 }
 
@@ -239,7 +242,10 @@ export type ConversationAssignmentEventReason =
   | 'UNASSIGNED'
   | 'REASSIGNED'
   | 'ROUND_ROBIN'
-  | 'DEFAULT_OWNER';
+  | 'DEFAULT_OWNER'
+  | 'AI_ASSIGNED'
+  | 'AI_HANDOFF'
+  | 'AI_HANDOFF_PENDING';
 
 export type ConversationAssignmentMember = {
   workspaceMemberId: string;
@@ -257,6 +263,10 @@ export type ConversationAssignmentEvent = {
   fromMember: ConversationAssignmentMember | null;
   toWorkspaceMemberId: string | null;
   toMember: ConversationAssignmentMember | null;
+  fromAiAgentId?: string | null;
+  fromAiAgent?: { id: string; name: string } | null;
+  toAiAgentId?: string | null;
+  toAiAgent?: { id: string; name: string } | null;
   actedByWorkspaceMemberId: string | null;
   actedBy: ConversationAssignmentMember | null;
   createdAt: string;

@@ -14,9 +14,13 @@ export function AssignmentHistoryItem({ event }: { event: ConversationAssignment
     <View style={styles.wrap}>
       <View style={styles.row}>
         <UserCheck color={colors.primary} size={14} />
-        <Text style={[styles.part, { color: colors.textSecondary }]}>{presentation.actorLabel}</Text>
-        <Text style={[styles.part, { color: colors.textSecondary }]}>{presentation.actionLabel}</Text>
-        {targetLabel ? <Text style={[styles.part, styles.target, { color: colors.textSecondary }]}>{targetLabel}</Text> : null}
+        {event.reason.startsWith('AI_') ? (
+          <Text style={[styles.part, { color: colors.textSecondary }]}>{presentation.body}</Text>
+        ) : <>
+          <Text style={[styles.part, { color: colors.textSecondary }]}>{presentation.actorLabel}</Text>
+          <Text style={[styles.part, { color: colors.textSecondary }]}>{presentation.actionLabel}</Text>
+          {targetLabel ? <Text style={[styles.part, styles.target, { color: colors.textSecondary }]}>{targetLabel}</Text> : null}
+        </>}
         <Text style={[styles.time, { color: colors.textMuted }]}>{timeLabel}</Text>
       </View>
     </View>

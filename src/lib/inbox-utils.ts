@@ -1319,6 +1319,7 @@ function getAssignmentMemberLabel(member: ConversationAssignmentMember | null, f
 }
 
 function getAssignmentActorLabel(event: ConversationAssignmentEvent) {
+  if (event.reason.startsWith('AI_')) return 'System';
   if (event.actedBy) return getAssignmentMemberLabel(event.actedBy);
   if (event.reason === 'DEFAULT_OWNER' || event.reason === 'ROUND_ROBIN') return 'System';
   return getAssignmentMemberLabel(event.actedBy);
@@ -1326,6 +1327,19 @@ function getAssignmentActorLabel(event: ConversationAssignmentEvent) {
 
 export function getAssignmentEventPresentation(event: ConversationAssignmentEvent): AssignmentEventPresentation {
   const actorLabel = getAssignmentActorLabel(event);
+  if (event.reason === 'AI_ASSIGNED') {
+    const name = event.toAiAgent?.name ?? 'AI Agent';
+    return { actorLabel, actionLabel: 'assigned', targetLabel: name, body: `AI Agent ${name} was assigned to this conversation` };
+  }
+  if (event.reason === 'AI_HANDOFF') {
+    const target = event.toMember ? getAssignmentMemberLabel(event.toMember) : 'a human agent';
+    return { actorLabel, actionLabel: 'handed off to', targetLabel: target,
+      body: `AI Agent ${event.fromAiAgent?.name ?? ''} handed off to ${target}${event.note ? `: ${event.note}` : ''}` };
+  }
+  if (event.reason === 'AI_HANDOFF_PENDING') {
+    return { actorLabel, actionLabel: 'requested a human handoff', targetLabel: null,
+      body: `AI Agent handoff is pending${event.note ? `: ${event.note}` : ''}` };
+  }
   const fromLabel = event.fromMember ? getAssignmentMemberLabel(event.fromMember, 'someone') : null;
   const toLabel = event.toMember ? getAssignmentMemberLabel(event.toMember, 'someone') : null;
 
