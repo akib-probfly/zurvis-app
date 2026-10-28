@@ -304,10 +304,10 @@ export function ContactsScreen() {
 
   const visibleAddTags = useMemo(() => {
     const query = addTagSearch.trim().toLowerCase();
-    const selected = new Set(addTags.map((tag) => tag.text.toLowerCase()));
-    const available = existingAddTags.filter((tag) => !selected.has(tag.text.toLowerCase()));
-    if (!query) return available;
-    return available.filter((tag) => tag.text.toLowerCase().includes(query));
+    const options = [...existingAddTags, ...addTags
+      .filter((tag) => !existingAddTags.some((existing) => existing.text.toLowerCase() === tag.text.toLowerCase()))
+      .map((tag) => ({ ...tag, id: tag.text }))];
+    return query ? options.filter((tag) => tag.text.toLowerCase().includes(query)) : options;
   }, [existingAddTags, addTags, addTagSearch]);
 
   const canCreateAddTag = useMemo(() => {
@@ -915,23 +915,6 @@ export function ContactsScreen() {
               ) : null}
 
               <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>Tags</Text>
-              {addTags.length ? (
-                <View style={styles.addSelectedTags}>
-                  {addTags.map((tag) => {
-                    const color = tag.color?.trim() || '#64748b';
-                    return (
-                      <Pressable
-                        key={tag.text}
-                        style={[styles.addSelectedTag, { backgroundColor: hexWithAlpha(color), borderColor: hexWithAlpha(color, '33') }]}
-                        onPress={() => setAddTags((current) => current.filter((item) => item.text !== tag.text))}
-                      >
-                        <Text style={[styles.addSelectedTagText, { color }]}>{tag.text}</Text>
-                        <X color={color} size={12} />
-                      </Pressable>
-                    );
-                  })}
-                </View>
-              ) : null}
               <View style={[styles.inlineSearch, { backgroundColor: colors.surfaceSecondary, borderColor: colors.cardBorder }]}>
                 <Search color={colors.textMuted} size={16} />
                 <TextInput
@@ -942,24 +925,28 @@ export function ContactsScreen() {
                   style={[styles.inlineSearchInput, { color: colors.text }]}
                 />
               </View>
+              <Text style={[styles.selectedTagCount, { color: colors.textSecondary }]}>{addTags.length} selected</Text>
               <ScrollView style={styles.addTagOptionsScroll} contentContainerStyle={styles.addTagOptionsContent} nestedScrollEnabled keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator>
               {visibleAddTags.map((tag) => {
-                const color = tag.color?.trim() || '#64748b';
+                const active = addTags.some((item) => item.text.toLowerCase() === tag.text.toLowerCase());
+                const color = tag.color?.trim() || colors.textMuted;
                 return (
                   <Pressable
                     key={tag.id}
-                    style={[styles.addTagOptionChip, { borderColor: color, backgroundColor: 'transparent' }]}
-                    onPress={() => {
-                      setAddTags((current) => (
-                        current.some((item) => item.text.toLowerCase() === tag.text.toLowerCase())
-                          ? current
-                          : [...current, { text: tag.text, color: tag.color }]
-                      ));
-                      setAddTagSearch('');
-                    }}
+                    accessibilityRole="checkbox"
+                    accessibilityState={{ checked: active }}
+                    style={[
+                      styles.addTagOptionChip,
+                      { borderColor: colors.cardBorder, backgroundColor: colors.surface },
+                      active && { borderColor: colors.primary, backgroundColor: `${colors.primary}12`, borderWidth: borderWidth.selected },
+                    ]}
+                    onPress={() => setAddTags((current) => active
+                      ? current.filter((item) => item.text.toLowerCase() !== tag.text.toLowerCase())
+                      : [...current, { text: tag.text, color: tag.color }])}
                   >
-                    <Plus color={color} size={12} />
-                    <Text style={[styles.addTagOptionText, { color: colors.textSecondary }]} numberOfLines={1}>{tag.text}</Text>
+                    <View style={[styles.addTagDot, { backgroundColor: color }]} />
+                    <Text style={[styles.addTagOptionText, { color: active ? colors.primary : colors.textSecondary }, active && { fontWeight: fontWeight.bold }]} numberOfLines={1}>{tag.text}</Text>
+                    {active ? <Check color={colors.primary} size={iconSize.xs} strokeWidth={3} /> : null}
                   </Pressable>
                 );
               })}
@@ -982,7 +969,7 @@ export function ContactsScreen() {
                 </Pressable>
               ) : null}
               {!visibleAddTags.length && !canCreateAddTag ? (
-                <Text style={[styles.emptyHint, { color: colors.textMuted }]}>{addTagSearch.trim() ? 'No tags match your search.' : 'No more tags to add.'}</Text>
+                <Text style={[styles.emptyHint, { color: colors.textMuted }]}>{addTagSearch.trim() ? 'No tags match your search.' : 'No tags available.'}</Text>
               ) : null}
             </SheetScrollView>
 
@@ -1372,13 +1359,11 @@ const createStyles = createThemedStyles((colors) => StyleSheet.create({
   addFormScroll: { flex: 1, minHeight: 0 },
   addTagOptionsScroll: { maxHeight: 200 },
   addTagOptionsContent: { alignItems: 'flex-start', flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
-  addTagOptionChip: { alignSelf: 'flex-start', alignItems: 'center', borderRadius: radius.pill, borderWidth: borderWidth.thin, flexDirection: 'row', flexGrow: 0, flexShrink: 0, gap: spacing.xs + spacing.hairline, paddingHorizontal: spacing.sm, paddingVertical: spacing.xxs },
-  addTagOptionText: { fontSize: fontSize.small, fontWeight: fontWeight.semibold },
+  addTagDot: { width: spacing.sm, height: spacing.sm, borderRadius: radius.xs },
+  addTagOptionChip: { alignSelf: 'flex-start', alignItems: 'center', borderRadius: radius.pill, borderWidth: borderWidth.thin, flexDirection: 'row', gap: spacing.compact, maxWidth: '100%', ...chipSize.compact },
+  addTagOptionText: { flexShrink: 1, fontSize: fontSize.caption, fontWeight: fontWeight.medium },
   addFormContent: { paddingBottom: spacing.xxl },
   optionSubtext: { color: colors.textMuted, fontSize: fontSize.small, marginTop: spacing.xxs },
-  addSelectedTags: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, marginBottom: spacing.sm },
-  addSelectedTag: { alignItems: 'center', borderRadius: radius.pill, borderWidth: borderWidth.thin, flexDirection: 'row', gap: spacing.xs + spacing.hairline, paddingHorizontal: spacing.sm, paddingVertical: spacing.xxs },
-  addSelectedTagText: { fontSize: fontSize.small, fontWeight: fontWeight.semibold },
   createTagRow: { alignItems: 'center', backgroundColor: colors.primarySoft, borderRadius: radius.md, flexDirection: 'row', gap: spacing.sm, marginTop: spacing.xs, paddingHorizontal: spacing.control, paddingVertical: spacing.control },
   createTagRowText: { color: colors.primary, fontSize: fontSize.caption, fontWeight: fontWeight.bold },
 }));
