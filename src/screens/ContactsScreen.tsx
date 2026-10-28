@@ -19,7 +19,7 @@ import {
   View,
 } from 'react-native';
 import { showNotice } from '../components/AppToast';
-import { useNavigation } from '@react-navigation/native';
+import { CommonActions, useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { apiFetch } from '../api/client';
@@ -30,6 +30,7 @@ import {
   exportCrmContacts,
   fetchCrmExport,
   fetchCrmContacts,
+  fetchCrmContact,
   fetchCrmExports,
   formatPhoneNumberDisplay,
   getContactTitle,
@@ -46,11 +47,12 @@ import { ChannelTypeFilterList } from '../components/ChannelTypeFilterList';
 import { DateRangeFilter } from '../components/DateRangeFilter';
 import { InlineSkeleton, ListSkeleton } from '../components/Skeleton';
 import { ChannelLogo } from '../components/ChannelLogo';
+import { ChatIcon } from '../components/ChatIcon';
 import { ColorfulAvatar } from '../components/ColorfulAvatar';
 import { ErrorState } from '../components/ErrorState';
 import { NotificationBell, NotificationCenter } from '../components/NotificationCenter';
 import { useTheme } from '../theme/ThemeContext';
-import { borderWidth, chipSize, fontSize, fontWeight, letterSpacing, lineHeight, radius, spacing } from '../theme/tokens';
+import { borderWidth, chipSize, controlSize, iconSize, fontSize, fontWeight, letterSpacing, lineHeight, radius, spacing } from '../theme/tokens';
 import { groupChannelsByType } from '../lib/channel-filter-groups';
 import { getCountryFlag } from '../lib/countryFromPhone';
 import type { ContactsStackParamList } from '../navigation/ContactsStack';
@@ -972,6 +974,9 @@ export function ContactsScreen() {
 }
 
 const ContactRow = memo(function ContactRow({ contact, navigation }: { contact: CrmContactListItem; navigation: any }) {
+  const queryClient = useQueryClient();
+  const [openingConversation, setOpeningConversation] = useState(false);
+  const openingConversationRef = useRef(false);
   const { colors } = useTheme();
   const styles = createStyles(colors);
   const title = getContactTitle(contact);
@@ -981,6 +986,37 @@ const ContactRow = memo(function ContactRow({ contact, navigation }: { contact: 
   const onPress = useCallback(() => {
     navigation.navigate('ContactDetails', { contactId: contact.id, contactName: title });
   }, [navigation, contact.id, title]);
+
+  const openConversation = async () => {
+    if (openingConversationRef.current) return;
+    openingConversationRef.current = true;
+    setOpeningConversation(true);
+    try {
+      const detail = await queryClient.fetchQuery({
+        queryKey: ['crm-contact', contact.id],
+        queryFn: () => fetchCrmContact(contact.id),
+        staleTime: 5 * 60_000,
+      });
+      const conversation = [...(detail.conversations ?? [])].sort((left, right) => {
+        const leftTime = Date.parse(left.lastMessageAt ?? left.createdAt);
+        const rightTime = Date.parse(right.lastMessageAt ?? right.createdAt);
+        return (Number.isFinite(rightTime) ? rightTime : 0) - (Number.isFinite(leftTime) ? leftTime : 0);
+      })[0];
+      if (!conversation) {
+        showNotice('No conversation yet', 'This contact does not have any conversations yet.');
+        return;
+      }
+      navigation.dispatch(CommonActions.navigate({
+        name: 'Inbox',
+        params: { screen: 'Conversation', params: { conversationId: conversation.id, contactName: title } },
+      }));
+    } catch (error) {
+      showNotice('Could not open conversation', error instanceof Error ? error.message : 'Please try again.');
+    } finally {
+      openingConversationRef.current = false;
+      setOpeningConversation(false);
+    }
+  };
 
   return (
     <Pressable onPress={onPress} style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.cardBorder }]}>
@@ -996,6 +1032,20 @@ const ContactRow = memo(function ContactRow({ contact, navigation }: { contact: 
       <View style={styles.copy}>
         <View style={styles.contactHeading}>
           <Text style={[styles.name, { color: colors.text }]} numberOfLines={1}>{title}</Text>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={`Open conversation with ${title}`}
+            accessibilityState={{ disabled: openingConversation, busy: openingConversation }}
+            disabled={openingConversation}
+            hitSlop={(controlSize.touchTarget - spacing.xxl) / 2}
+            onPress={(event) => {
+              event.stopPropagation();
+              void openConversation();
+            }}
+            style={styles.conversationButton}
+          >
+            {openingConversation ? <ActivityIndicator size="small" color={colors.primary} /> : <ChatIcon color={colors.primary} size={iconSize.sm} />}
+          </Pressable>
           <Text style={[styles.activity, { color: colors.textMuted }]}>{formatRelativeActivity(contact.lastActivityAt)}</Text>
         </View>
         <View style={styles.contactMethods}>
@@ -1212,6 +1262,7 @@ const createStyles = createThemedStyles((colors) => StyleSheet.create({
   avatarText: { color: colors.primary, fontSize: fontSize.body, fontWeight: fontWeight.bold },
   channelBadge: { borderColor: '#fff', borderRadius: radius.inset, borderWidth: borderWidth.strong, bottom: -2, overflow: 'hidden', position: 'absolute', right: -2 },
   copy: { flex: 1, minWidth: 0 },
+  conversationButton: { alignItems: 'center', justifyContent: 'center', width: spacing.xxl, height: spacing.xxl, borderRadius: radius.pill },
   contactHeading: { alignItems: 'center', flexDirection: 'row', gap: spacing.compact, justifyContent: 'space-between', minWidth: 0 },
   name: { color: colors.text, flex: 1, fontSize: fontSize.body, fontWeight: fontWeight.bold, letterSpacing: -0.15, minWidth: 0 },
   contactMethods: { alignItems: 'center', flexDirection: 'row', gap: spacing.control, marginTop: spacing.xs },
