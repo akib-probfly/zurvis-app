@@ -127,6 +127,9 @@ export function SettingsScreen() {
   const visibleGroups = useMemo(
     () => SETTINGS_GROUPS
       .map((group) => {
+        if (!canManage && ['Connectors', 'Commerce', 'Team Management'].includes(group.label)) {
+          return { ...group, items: [] };
+        }
         if (group.label === 'Broadcast' && !showBroadcast) return { ...group, items: [] };
         if (group.label === 'Commerce' && !workspace?.ecommerceEnabled) return { ...group, items: [] };
         if (group.label === 'Billing' && !canManage && !subscriptionExpired) return { ...group, items: [] };
