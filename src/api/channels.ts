@@ -290,6 +290,12 @@ export function fetchWebchatInstallation(channelId: string) {
   return apiFetch<WebchatInstallation>(`/channels/${channelId}/webchat/installation`);
 }
 
+export function fetchInboxChannelOptions(workspaceId: string) {
+  return apiFetch<{ items: Array<{ id: string; name: string; type: ChannelType; displayPhoneNumber: string | null }> }>(
+    `/channels/inbox-filter-options?workspaceId=${encodeURIComponent(workspaceId)}`,
+  );
+}
+
 export function fetchChannels() {
   return apiFetch<ChannelsListResponse>(
     '/channels?page=1&limit=100&sortBy=createdAt&sortOrder=desc',

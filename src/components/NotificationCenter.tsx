@@ -17,7 +17,8 @@ import {
 } from '../api/notifications';
 import { ChannelLogo, normalizeChannelType } from './ChannelLogo';
 import { PanelSkeleton } from './Skeleton';
-import { fetchChannels } from '../api/channels';
+import { fetchChannels, fetchInboxChannelOptions } from '../api/channels';
+import { useWorkspaceAccess } from '../lib/workspace-access';
 import { isBillingLocked, pollingWhileUnlocked } from '../lib/billing-lock';
 
 function formatNotificationTime(isoDate: string) {
@@ -289,6 +290,7 @@ function NotificationScrollList({
 }
 
 export function NotificationCenter({ visible, onClose }: { visible: boolean; onClose: () => void }) {
+  const { workspace, canManage } = useWorkspaceAccess();
   const { colors } = useTheme();
   const navigation = useNavigation<any>();
   const queryClient = useQueryClient();
@@ -307,11 +309,22 @@ export function NotificationCenter({ visible, onClose }: { visible: boolean; onC
   const channelsQuery = useQuery({
     queryKey: ['channels'],
     queryFn: fetchChannels,
+    enabled: canManage,
+    staleTime: 2 * 60_000,
+  });
+  const inboxChannelsQuery = useQuery({
+    queryKey: ['channels', 'inbox-filter-options', workspace?.id],
+    queryFn: () => fetchInboxChannelOptions(workspace!.id),
+    enabled: Boolean(workspace?.id) && !canManage,
     staleTime: 2 * 60_000,
   });
   const channelTypeById = useMemo(() => {
     const map = new Map<string, string>();
-    for (const channel of channelsQuery.data?.items ?? []) {
+    for (const channel of inboxChannelsQuery.data?.items ?? []) {
+      map.set(channel.id, channel.type);
+      if (channel.name) map.set(channel.name, channel.type);
+    }
+    for (const channel of canManage ? channelsQuery.data?.items ?? [] : []) {
       map.set(channel.id, channel.type);
       if (channel.name) map.set(channel.name, channel.type);
       for (const account of channel.accounts ?? []) {
@@ -336,7 +349,7 @@ export function NotificationCenter({ visible, onClose }: { visible: boolean; onC
       }
     }
     return map;
-  }, [channelsQuery.data?.items, queryClient]);
+  }, [canManage, channelsQuery.data?.items, inboxChannelsQuery.data?.items, queryClient]);
 
   const refetchNotifications = notificationsQuery.refetch;
   const refetchUnreadCount = unreadCountQuery.refetch;
