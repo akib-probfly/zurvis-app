@@ -46,6 +46,7 @@ import {
   type QuickReplySnippet,
 } from '../api/quickReplies';
 import { fetchChannels, type ChannelType } from '../api/channels';
+import { useWorkspaceAccess } from '../lib/workspace-access';
 import { fetchMyWorkspaces } from '../api/workspaces';
 import { ErrorState } from '../components/ErrorState';
 import { BottomSheet, SheetFlatList, SheetScrollView } from '../components/BottomSheet';
@@ -113,6 +114,7 @@ export function QuickRepliesSettingsScreen() {
   const [channelSearch, setChannelSearch] = useState('');
   const [channelPickerOpen, setChannelPickerOpen] = useState(false);
 
+  const { canManage } = useWorkspaceAccess();
   const workspacesQuery = useQuery({
     queryKey: ['workspaces', 'mine'],
     queryFn: fetchMyWorkspaces,
@@ -123,11 +125,12 @@ export function QuickRepliesSettingsScreen() {
   const channelsQuery = useQuery({
     queryKey: ['channels'],
     queryFn: fetchChannels,
+    enabled: canManage,
     staleTime: 60_000,
   });
 
   const channelAccountOptions = useMemo<ChannelAccountOption[]>(
-    () => (channelsQuery.data?.items ?? []).flatMap((channel) =>
+    () => (canManage ? channelsQuery.data?.items ?? [] : []).flatMap((channel) =>
       (channel.accounts ?? []).map((account) => ({
         id: account.id,
         label: account.displayName || account.pageName || account.displayPhoneNumber || channel.name,
@@ -135,7 +138,7 @@ export function QuickRepliesSettingsScreen() {
         type: channel.type,
       })),
     ),
-    [channelsQuery.data?.items],
+    [canManage, channelsQuery.data?.items],
   );
 
   const selectedChannelAccounts = useMemo(
@@ -341,7 +344,9 @@ export function QuickRepliesSettingsScreen() {
       const selectedTypes = channelAccountOptions
         .filter((account) => form.channelAccountIds.includes(account.id))
         .map((account) => account.type);
-      const channelScope = channelScopeFromAccountTypes(selectedTypes);
+      const channelScope = canManage
+        ? channelScopeFromAccountTypes(selectedTypes)
+        : channelScopeFromAccountTypes([editing?.channelScope]);
       if (editing) {
         await updateMutation.mutateAsync({
           quickReplyId: editing.id,
@@ -484,53 +489,62 @@ export function QuickRepliesSettingsScreen() {
                 style={[styles.input, { backgroundColor: colors.background, borderColor: colors.cardBorder, color: colors.text }]}
               />
 
-              <Text style={[styles.label, { color: colors.textSecondary }]}>Channels</Text>
-              <Text style={[styles.helpText, { color: colors.textMuted }]}>
-                Leave empty to make this quick reply available globally. Select one or more channel accounts to target it.
-              </Text>
-              <Pressable
-                onPress={() => setChannelPickerOpen(true)}
-                disabled={channelsQuery.isLoading || channelAccountOptions.length === 0}
-                style={[styles.select, { backgroundColor: colors.background, borderColor: colors.cardBorder }]}
-              >
-                <Text
-                  style={[
-                    styles.selectText,
-                    { color: form.channelAccountIds.length ? colors.text : colors.textMuted },
-                  ]}
-                  numberOfLines={1}
-                >
-                  {channelsQuery.isLoading
-                    ? 'Loading channel accounts...'
-                    : channelsQuery.isError
-                      ? 'Could not load channels'
-                      : channelAccountOptions.length === 0
-                        ? 'No connected channel accounts found'
-                        : form.channelAccountIds.length === 0
-                          ? 'Select channel accounts'
-                          : `${form.channelAccountIds.length} channel account${form.channelAccountIds.length === 1 ? '' : 's'} selected`}
-                </Text>
-                <ChevronDown color={colors.textMuted} size={18} />
-              </Pressable>
-              {selectedChannelAccounts.length > 0 ? (
-                <View style={styles.chipWrap}>
-                  {selectedChannelAccounts.map((account) => (
-                    <Pressable
-                      key={account.id}
-                      onPress={() => setForm((current) => ({
-                        ...current,
-                        channelAccountIds: current.channelAccountIds.filter((id) => id !== account.id),
-                      }))}
-                      style={[styles.selectedChip, { backgroundColor: colors.surfaceSecondary, borderColor: colors.cardBorder }]}
+              {canManage ? (
+                <>
+                  <Text style={[styles.label, { color: colors.textSecondary }]}>Channels</Text>
+                  <Text style={[styles.helpText, { color: colors.textMuted }]}>
+                    Leave empty to make this quick reply available globally. Select one or more channel accounts to target it.
+                  </Text>
+                  <Pressable
+                    onPress={() => setChannelPickerOpen(true)}
+                    disabled={channelsQuery.isLoading || channelAccountOptions.length === 0}
+                    style={[styles.select, { backgroundColor: colors.background, borderColor: colors.cardBorder }]}
+                  >
+                    <Text
+                      style={[
+                        styles.selectText,
+                        { color: form.channelAccountIds.length ? colors.text : colors.textMuted },
+                      ]}
+                      numberOfLines={1}
                     >
-                      <ChannelLogo type={account.type} box={20} glyph={12} radius={6} />
-                      <Text style={[styles.selectedChipText, { color: colors.text }]} numberOfLines={1}>{account.label}</Text>
-                      <X color={colors.textMuted} size={12} />
-                    </Pressable>
-                  ))}
-                </View>
+                      {channelsQuery.isLoading
+                        ? 'Loading channel accounts...'
+                        : channelsQuery.isError
+                          ? 'Could not load channels'
+                          : channelAccountOptions.length === 0
+                            ? 'No connected channel accounts found'
+                            : form.channelAccountIds.length === 0
+                              ? 'Select channel accounts'
+                              : `${form.channelAccountIds.length} channel account${form.channelAccountIds.length === 1 ? '' : 's'} selected`}
+                    </Text>
+                    <ChevronDown color={colors.textMuted} size={18} />
+                  </Pressable>
+                  {selectedChannelAccounts.length > 0 ? (
+                    <View style={styles.chipWrap}>
+                      {selectedChannelAccounts.map((account) => (
+                        <Pressable
+                          key={account.id}
+                          onPress={() => setForm((current) => ({
+                            ...current,
+                            channelAccountIds: current.channelAccountIds.filter((id) => id !== account.id),
+                          }))}
+                          style={[styles.selectedChip, { backgroundColor: colors.surfaceSecondary, borderColor: colors.cardBorder }]}
+                        >
+                          <ChannelLogo type={account.type} box={20} glyph={12} radius={6} />
+                          <Text style={[styles.selectedChipText, { color: colors.text }]} numberOfLines={1}>{account.label}</Text>
+                          <X color={colors.textMuted} size={12} />
+                        </Pressable>
+                      ))}
+                    </View>
+                  ) : (
+                    <Text style={[styles.channelStatus, { color: colors.primary }]}>Global quick reply</Text>
+                  )}
+
+                </>
               ) : (
-                <Text style={[styles.channelStatus, { color: colors.primary }]}>Global quick reply</Text>
+                <Text style={[styles.helpText, { color: colors.textMuted }]}>
+                  {editing ? 'The existing channel scope will be kept.' : 'This quick reply will be available globally.'}
+                </Text>
               )}
 
               <View style={styles.labelRow}>
