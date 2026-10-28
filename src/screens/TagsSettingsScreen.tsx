@@ -36,7 +36,7 @@ import { ListSkeleton } from '../components/Skeleton';
 import { useWorkspaceAccess } from '../lib/workspace-access';
 import { useTheme } from '../theme/ThemeContext';
 import { AppBadge, AppButton, AppCard, AppIconButton, AppSearchField, AppTextField, ScreenHeader, SettingsSection } from '../ui';
-import { fontSize, fontWeight, radius, spacing } from '../theme/tokens';
+import { borderWidth, controlSize, fontSize, fontWeight, iconSize, opacity, radius, spacing } from '../theme/tokens';
 
 const DEFAULT_TAG_COLOR = WORKSPACE_TAG_COLOR_OPTIONS[0].color;
 
@@ -119,9 +119,9 @@ export function TagsSettingsScreen() {
     [tags],
   );
   const metrics = [
-    { label: 'Total tags', value: String(totalTags), colors: ['#047857', '#34d399'] as [string, string] },
-    { label: 'Usage', value: String(usageTotal), colors: ['#1d4ed8', '#60a5fa'] as [string, string] },
-    { label: 'Most used', value: mostUsedTag?.text ?? 'None', colors: ['#c2410c', '#fb923c'] as [string, string] },
+    { label: 'Total tags', value: String(totalTags), colors: [colors.successBorder, colors.success] as [string, string] },
+    { label: 'Usage', value: String(usageTotal), colors: [colors.primaryBorder, colors.primary] as [string, string] },
+    { label: 'Most used', value: mostUsedTag?.text ?? 'None', colors: [colors.warningBorder, colors.warning] as [string, string] },
   ];
 
   const invalidate = async () => {
@@ -228,7 +228,7 @@ export function TagsSettingsScreen() {
         onBack={() => navigation.goBack()}
         right={canUpdate ? (
           <Pressable style={[styles.addButton, { backgroundColor: colors.primary }]} onPress={openCreate} accessibilityLabel="Add tag">
-            <Plus color="#fff" size={18} />
+            <Plus color={colors.primaryText} size={iconSize.md} />
           </Pressable>
         ) : undefined}
       />
@@ -251,10 +251,10 @@ export function TagsSettingsScreen() {
                 end={{ x: 1, y: 1 }}
                 style={styles.metricCard}
               >
-                <View style={[styles.orb, styles.orbA]} />
-                <View style={[styles.orb, styles.orbB]} />
-                <Text style={styles.metricValue} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>{metric.value}</Text>
-                <Text style={styles.metricLabel}>{metric.label}</Text>
+                <View style={[styles.orb, styles.orbA, { backgroundColor: colors.primaryText }]} />
+                <View style={[styles.orb, styles.orbB, { backgroundColor: colors.primaryText }]} />
+                <Text style={[styles.metricValue, { color: colors.primaryText }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>{metric.value}</Text>
+                <Text style={[styles.metricLabel, { color: colors.primaryText }]}>{metric.label}</Text>
               </LinearGradient>
             ))}
           </View>
@@ -286,10 +286,10 @@ export function TagsSettingsScreen() {
             <FlatList
               data={filteredTags}
               keyExtractor={(item) => item.id}
-              contentContainerStyle={[styles.listContent, { paddingBottom: Math.max(insets.bottom, 24) }]}
+              contentContainerStyle={[styles.listContent, { paddingBottom: Math.max(insets.bottom, spacing.xxl) }]}
               ListEmptyComponent={(
                 <AppCard style={styles.emptyCard}>
-                  <Tag color={colors.textMuted} size={28} />
+                  <Tag color={colors.textMuted} size={iconSize.xl} />
                   <Text style={[styles.emptyTitle, { color: colors.text }]}>No tags found</Text>
                   <Text style={[styles.emptyBody, { color: colors.textSecondary }]}>
                     {search.trim() ? 'Try a different search or create a new tag.' : 'Create a tag to label conversations and contacts.'}
@@ -313,22 +313,22 @@ export function TagsSettingsScreen() {
                     <AppBadge label="Archived" tone="neutral" size="sm" />
                   ) : canUpdate ? (
                     <View style={styles.itemActions}>
-                      <Pressable style={styles.iconButton} onPress={() => openEdit(item)} hitSlop={8} accessibilityLabel={`Edit ${item.text}`}>
-                        <PencilLine color={colors.primary} size={18} />
+                      <Pressable style={styles.iconButton} onPress={() => openEdit(item)} hitSlop={spacing.sm} accessibilityLabel={`Edit ${item.text}`}>
+                        <PencilLine color={colors.primary} size={iconSize.md} />
                       </Pressable>
                       {canDeleteTags ? (
-                        <Pressable style={styles.iconButton} onPress={() => setPendingDelete(item)} hitSlop={8} accessibilityLabel={`Delete ${item.text}`}>
-                          <Trash2 color={colors.error} size={18} />
+                        <Pressable style={styles.iconButton} onPress={() => setPendingDelete(item)} hitSlop={spacing.sm} accessibilityLabel={`Delete ${item.text}`}>
+                          <Trash2 color={colors.error} size={iconSize.md} />
                         </Pressable>
                       ) : null}
                       <Pressable
                         style={styles.iconButton}
                         disabled={mutating}
                         onPress={() => void handleArchive(item)}
-                        hitSlop={8}
+                        hitSlop={spacing.sm}
                         accessibilityLabel={`Archive ${item.text}`}
                       >
-                        <Archive color={colors.textSecondary} size={18} />
+                        <Archive color={colors.textSecondary} size={iconSize.md} />
                       </Pressable>
                     </View>
                   ) : null}
@@ -362,10 +362,10 @@ export function TagsSettingsScreen() {
                   style={[
                     styles.colorSwatch,
                     { backgroundColor: option.color },
-                    selected && { borderColor: colors.text, borderWidth: 2 },
+                    selected && { borderColor: colors.text, borderWidth: borderWidth.strong },
                   ]}
                 >
-                  {selected ? <Check color="#fff" size={14} /> : null}
+                  {selected ? <Check color={colors.primaryText} size={iconSize.sm} /> : null}
                 </Pressable>
               );
             })}
@@ -411,7 +411,7 @@ export function TagsSettingsScreen() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1 },
-  addButton: { alignItems: 'center', borderRadius: radius.pill, height: 36, justifyContent: 'center', width: 36 },
+  addButton: { alignItems: 'center', borderRadius: radius.pill, height: controlSize.compact, justifyContent: 'center', width: controlSize.compact },
   metrics: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.lg, paddingHorizontal: spacing.lg },
   metricCard: {
     borderRadius: radius.lg,
@@ -421,58 +421,55 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     padding: spacing.md,
   },
-  metricValue: { color: '#fff', fontSize: fontSize.title, fontWeight: fontWeight.extrabold },
-  metricLabel: { color: 'rgba(255,255,255,0.88)', fontSize: fontSize.tiny, fontWeight: fontWeight.semibold, marginTop: spacing.xs },
-  orb: { backgroundColor: 'rgba(255,255,255,0.16)', borderRadius: 999, position: 'absolute' },
-  orbA: { height: 72, right: -20, top: -24, width: 72 },
-  orbB: { bottom: -22, height: 56, left: -16, width: 56 },
+  metricValue: { fontSize: fontSize.title, fontWeight: fontWeight.extrabold },
+  metricLabel: { opacity: opacity.pressed, fontSize: fontSize.tiny, fontWeight: fontWeight.semibold, marginTop: spacing.xs },
+  orb: { opacity: opacity.subtle * opacity.subtle, borderRadius: radius.pill, position: 'absolute' },
+  orbA: { height: controlSize.large + spacing.lg, right: -spacing.xl, top: -spacing.xxl, width: controlSize.large + spacing.lg },
+  orbB: { bottom: -spacing.sectionInset, height: controlSize.large, left: -spacing.lg, width: controlSize.large },
   searchRow: {
     alignItems: 'center',
-    borderBottomWidth: 1,
+    borderBottomWidth: borderWidth.thin,
     flexDirection: 'row',
-    gap: 8,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
+    gap: spacing.sm,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.control,
   },
-  listContent: { gap: 10, padding: 16 },
-  emptyCard: { alignItems: 'center', borderRadius: 18, borderWidth: 1, padding: 28 },
-  emptyTitle: { fontSize: 16, fontWeight: '800', marginTop: 12 },
-  emptyBody: { fontSize: 13, marginBottom: 16, marginTop: 4, textAlign: 'center' },
-  itemCard: { alignItems: 'center', borderRadius: 16, borderWidth: 1, flexDirection: 'row', gap: 10, padding: 12 },
-  archivedCard: { opacity: 0.8 },
+  listContent: { gap: spacing.control, padding: spacing.lg },
+  emptyCard: { alignItems: 'center', borderRadius: radius.xl, borderWidth: borderWidth.thin, padding: spacing.block },
+  emptyTitle: { fontSize: fontSize.subheading, fontWeight: fontWeight.extrabold, marginTop: spacing.md },
+  emptyBody: { fontSize: fontSize.caption, marginBottom: spacing.lg, marginTop: spacing.xs, textAlign: 'center' },
+  itemCard: { alignItems: 'center', borderRadius: radius.control, borderWidth: borderWidth.thin, flexDirection: 'row', gap: spacing.control, padding: spacing.md },
+  archivedCard: { opacity: opacity.pressed },
   itemCopy: { flex: 1, minWidth: 0 },
-  itemMeta: { fontSize: 11, marginTop: 6 },
+  itemMeta: { fontSize: fontSize.compact, marginTop: spacing.compact },
   itemActions: { flexDirection: 'row' },
-  iconButton: { alignItems: 'center', height: 34, justifyContent: 'center', width: 34 },
-  archivedBadge: { borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4 },
-  archivedBadgeText: { fontSize: 11, fontWeight: '700' },
+  iconButton: { alignItems: 'center', height: controlSize.compact, justifyContent: 'center', width: controlSize.compact },
   chip: {
     alignItems: 'center',
     alignSelf: 'flex-start',
-    borderRadius: 999,
-    borderWidth: 1,
+    borderRadius: radius.pill,
+    borderWidth: borderWidth.thin,
     flexDirection: 'row',
-    gap: 6,
+    gap: spacing.compact,
     maxWidth: '100%',
-    paddingHorizontal: 10,
-    paddingVertical: 5,
+    paddingHorizontal: spacing.control,
+    paddingVertical: spacing.xs,
   },
-  chipDot: { borderRadius: 3, height: 6, width: 6 },
-  chipLabel: { flexShrink: 1, fontSize: 12, fontWeight: '700' },
-  primaryButtonSpacing: { marginTop: 4 },
-  sheetSurface: { maxHeight: '100%', paddingBottom: 20, paddingHorizontal: 20, paddingTop: 8 },
-  sheetTitle: { fontSize: 18, fontWeight: '800', marginBottom: 8 },
+  chipDot: { borderRadius: radius.pill, height: spacing.compact, width: spacing.compact },
+  chipLabel: { flexShrink: 1, fontSize: fontSize.small, fontWeight: fontWeight.bold },
+  primaryButtonSpacing: { marginTop: spacing.xs },
+  sheetSurface: { maxHeight: '100%', paddingBottom: spacing.xl, paddingHorizontal: spacing.xl, paddingTop: spacing.sm },
   sheetScroll: { flexGrow: 1, flexShrink: 1 },
-  sheetContent: { paddingBottom: 8 },
-  label: { fontSize: 12, fontWeight: '700', marginBottom: 6, marginTop: 12 },
-  colorRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  sheetContent: { paddingBottom: spacing.sm },
+  label: { fontSize: fontSize.small, fontWeight: fontWeight.bold, marginBottom: spacing.compact, marginTop: spacing.md },
+  colorRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.control },
   colorSwatch: {
     alignItems: 'center',
     borderColor: 'transparent',
-    borderRadius: 18,
-    height: 36,
+    borderRadius: radius.xl,
+    height: controlSize.compact,
     justifyContent: 'center',
-    width: 36,
+    width: controlSize.compact,
   },
-  sheetActions: { flexDirection: 'row', gap: 10, justifyContent: 'flex-end', marginTop: 12 },
+  sheetActions: { flexDirection: 'row', gap: spacing.control, justifyContent: 'flex-end', marginTop: spacing.md },
 });
