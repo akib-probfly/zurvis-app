@@ -4,7 +4,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as DocumentPicker from 'expo-document-picker';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
-import { Ban, Check, CheckCircle2, CheckSquare, CircleSlash, ContactRound, Download, EllipsisVertical, Filter, Import, Mail, Phone, Plus, Search, Trash2, X } from 'lucide-react-native';
+import { Ban, Check, ChevronDown, CheckCircle2, CheckSquare, CircleSlash, ContactRound, Download, EllipsisVertical, Filter, Import, Mail, Phone, Plus, Search, Trash2, X } from 'lucide-react-native';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
@@ -133,6 +133,7 @@ export function ContactsScreen() {
   const [addChannelAccountId, setAddChannelAccountId] = useState<string | null>(null);
   const [addTags, setAddTags] = useState<Array<{ text: string; color?: string | null }>>([]);
   const [addChannelSearch, setAddChannelSearch] = useState('');
+  const [addChannelPickerOpen, setAddChannelPickerOpen] = useState(false);
   const [addTagSearch, setAddTagSearch] = useState('');
   const [dismissedExportId, setDismissedExportId] = useState<string | null>(null);
   const [sessionExportIds, setSessionExportIds] = useState<string[]>([]);
@@ -317,18 +318,19 @@ export function ContactsScreen() {
       && !addTags.some((tag) => tag.text.toLowerCase() === normalized);
   }, [addTagSearch, existingAddTags, addTags]);
 
-  const resolvedAddChannelIds = useMemo(() => {
-    if (addChannelAccountId) return [addChannelAccountId];
-    return whatsappAccountOptions[0] ? [whatsappAccountOptions[0].accountId] : [];
-  }, [addChannelAccountId, whatsappAccountOptions]);
+  const resolvedAddChannelIds = useMemo(
+    () => addChannelAccountId ? [addChannelAccountId] : [],
+    [addChannelAccountId],
+  );
+
+  const selectedAddChannel = whatsappAccountOptions.find((option) => option.accountId === resolvedAddChannelIds[0]);
 
   useEffect(() => {
-    if (!addOpen) return;
-    if (addChannelAccountId) return;
-    if (whatsappAccountOptions[0]) {
-      setAddChannelAccountId(whatsappAccountOptions[0].accountId);
+    if (!addOpen) {
+      setAddChannelPickerOpen(false);
+      setAddChannelSearch('');
     }
-  }, [addOpen, addChannelAccountId, whatsappAccountOptions]);
+  }, [addOpen]);
 
   const assigneeOptions = useMemo(() => {
     const query = userSearch.trim().toLowerCase();
@@ -840,7 +842,7 @@ export function ContactsScreen() {
         </View>
       </BottomSheet>
 
-      <BottomSheet visible={addOpen} onClose={() => setAddOpen(false)} sheetStyle={styles.sheetSurface}>
+      <BottomSheet visible={addOpen} onClose={() => setAddOpen(false)} sheetStyle={[styles.sheetSurface, styles.addSheetSurface]}>
             <View style={styles.sheetHeader}>
               <Text style={[styles.sheetTitle, { color: colors.text }]}>Add contact</Text>
             </View>
@@ -857,6 +859,24 @@ export function ContactsScreen() {
               <TextInput value={addEmail} onChangeText={setAddEmail} placeholder="name@example.com" placeholderTextColor={colors.textMuted} keyboardType="email-address" autoCapitalize="none" style={[styles.fieldInput, { backgroundColor: colors.surfaceSecondary, borderColor: colors.cardBorder, color: colors.text }]} />
 
               <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>Channel</Text>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Select channel"
+                accessibilityState={{ expanded: addChannelPickerOpen }}
+                onPress={() => setAddChannelPickerOpen((open) => !open)}
+                style={[styles.channelSelect, { backgroundColor: colors.surfaceSecondary, borderColor: colors.cardBorder }]}
+              >
+                {selectedAddChannel ? <ChannelLogo type={selectedAddChannel.channelType} box={spacing.xxl} glyph={iconSize.sm} radius={radius.sm} /> : null}
+                <View style={styles.copy}>
+                  <Text style={[styles.optionText, { color: selectedAddChannel ? colors.text : colors.textMuted }]} numberOfLines={1}>
+                    {selectedAddChannel?.channelName ?? 'Select channel'}
+                  </Text>
+                  {selectedAddChannel?.displayPhoneNumber ? <Text style={[styles.optionSubtext, { color: colors.textMuted }]}>{selectedAddChannel.displayPhoneNumber}</Text> : null}
+                </View>
+                <ChevronDown color={colors.textMuted} size={iconSize.sm} />
+              </Pressable>
+              {addChannelPickerOpen ? (
+                <View style={[styles.channelSelectList, { borderColor: colors.cardBorder }]}>
               <View style={[styles.inlineSearch, { backgroundColor: colors.surfaceSecondary, borderColor: colors.cardBorder }]}>
                 <Search color={colors.textMuted} size={16} />
                 <TextInput
@@ -873,7 +893,11 @@ export function ContactsScreen() {
                   <Pressable
                     key={option.accountId}
                     style={[styles.optionRow, active && [styles.optionRowActive, { backgroundColor: colors.surfaceSecondary }]]}
-                    onPress={() => setAddChannelAccountId(option.accountId)}
+                    onPress={() => {
+                      setAddChannelAccountId(option.accountId);
+                      setAddChannelPickerOpen(false);
+                      setAddChannelSearch('');
+                    }}
                   >
                     <ChannelLogo type={option.channelType} box={28} glyph={14} radius={8} />
                     <View style={{ flex: 1, minWidth: 0 }}>
@@ -886,6 +910,9 @@ export function ContactsScreen() {
                 );
               })}
               {!visibleAddChannels.length ? <Text style={[styles.emptyHint, { color: colors.textMuted }]}>No WhatsApp channels available.</Text> : null}
+
+                </View>
+              ) : null}
 
               <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>Tags</Text>
               {addTags.length ? (
@@ -1295,6 +1322,8 @@ const createStyles = createThemedStyles((colors) => StyleSheet.create({
   layerTabText: { color: colors.textSecondary, fontSize: fontSize.compact, fontWeight: fontWeight.semibold },
   layerTabTextActive: { color: colors.text, fontWeight: fontWeight.bold },
   optionList: { gap: spacing.compact, maxHeight: 400 },
+  channelSelect: { alignItems: 'center', flexDirection: 'row', gap: spacing.sm, borderWidth: borderWidth.thin, borderRadius: radius.md, padding: spacing.control, minHeight: controlSize.touchTarget },
+  channelSelectList: { borderWidth: borderWidth.thin, borderRadius: radius.md, padding: spacing.xs, marginTop: spacing.xs },
   optionRow: { alignItems: 'center', borderRadius: radius.md, flexDirection: 'row', gap: spacing.control, paddingHorizontal: spacing.control, paddingVertical: spacing.control },
   optionRowActive: { backgroundColor: colors.primarySoft },
   optionText: { color: colors.text, flex: 1, fontSize: fontSize.section, fontWeight: fontWeight.medium },
@@ -1339,7 +1368,8 @@ const createStyles = createThemedStyles((colors) => StyleSheet.create({
   applyText: { color: colors.primaryText, fontSize: fontSize.body, fontWeight: fontWeight.bold },
   fieldLabel: { color: colors.text, fontSize: fontSize.caption, fontWeight: fontWeight.semibold, marginBottom: spacing.compact, marginTop: spacing.control },
   fieldInput: { backgroundColor: colors.background, borderColor: colors.inputBorder, borderRadius: radius.md, borderWidth: borderWidth.thin, color: colors.text, paddingHorizontal: spacing.md, paddingVertical: spacing.md },
-  addFormScroll: { maxHeight: 420 },
+  addSheetSurface: { height: '85%' },
+  addFormScroll: { flex: 1, minHeight: 0 },
   addTagOptionsScroll: { maxHeight: 200 },
   addTagOptionsContent: { alignItems: 'flex-start', flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
   addTagOptionChip: { alignSelf: 'flex-start', alignItems: 'center', borderRadius: radius.pill, borderWidth: borderWidth.thin, flexDirection: 'row', flexGrow: 0, flexShrink: 0, gap: spacing.xs + spacing.hairline, paddingHorizontal: spacing.control, paddingVertical: spacing.compact },
