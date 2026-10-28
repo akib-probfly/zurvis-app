@@ -4,7 +4,6 @@ import * as ImagePicker from 'expo-image-picker';
 import {
   Check,
   ChevronDown,
-  MessageSquareText,
   Paperclip,
   PencilLine,
   Plus,
@@ -53,6 +52,7 @@ import { BottomSheet, SheetFlatList, SheetScrollView } from '../components/Botto
 import { FormSkeleton, ListSkeleton } from '../components/Skeleton';
 import { AuthenticatedImage } from '../components/AuthenticatedImage';
 import { ChannelLogo } from '../components/ChannelLogo';
+import { ChatIcon } from '../components/ChatIcon';
 
 const MAX_ATTACHMENT_BYTES = 5 * 1024 * 1024;
 const MAX_ATTACHMENTS = 100;
@@ -437,7 +437,7 @@ export function QuickRepliesSettingsScreen() {
               contentContainerStyle={[styles.listContent, { paddingBottom: Math.max(insets.bottom, 24) }]}
               ListEmptyComponent={(
                 <View style={[styles.emptyCard, { backgroundColor: colors.surface, borderColor: colors.cardBorder }]}>
-                  <MessageSquareText color={colors.textMuted} size={28} />
+                  <ChatIcon color={colors.textMuted} size={28} />
                   <Text style={[styles.emptyTitle, { color: colors.text }]}>No quick replies yet</Text>
                   <Text style={[styles.emptyBody, { color: colors.textSecondary }]}>Create a snippet to reuse across conversations.</Text>
                   <AppButton block style={styles.primaryButtonSpacing} icon={Plus} label="Add quick reply" onPress={openCreate} />
@@ -446,7 +446,7 @@ export function QuickRepliesSettingsScreen() {
               renderItem={({ item }) => (
                 <View style={[styles.itemCard, { backgroundColor: colors.surface, borderColor: colors.cardBorder }]}>
                   <View style={styles.itemIcon}>
-                    <MessageSquareText color={colors.primary} size={18} />
+                    <ChatIcon color={colors.primary} size={18} />
                   </View>
                   <View style={styles.itemCopy}>
                     <Text style={[styles.itemTitle, { color: colors.text }]} numberOfLines={1}>{item.title}</Text>
