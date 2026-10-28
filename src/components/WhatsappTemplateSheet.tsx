@@ -58,6 +58,7 @@ import { AppSegmentedControl } from '../ui';
 export type TemplateSheetMode = 'view' | 'edit' | 'create';
 
 type Props = {
+  channelName: string;
   visible: boolean;
   mode: TemplateSheetMode;
   template?: WhatsappTemplate | null;
@@ -143,7 +144,7 @@ function getButtonIcon(type: WhatsappTemplateButtonType) {
   return <List color="#00A5F4" size={13} />;
 }
 
-function TemplatePreviewBubble({ form }: { form: WhatsappTemplateFormValues }) {
+function TemplatePreviewBubble({ form, channelName }: { form: WhatsappTemplateFormValues; channelName: string }) {
   const { colors } = useTheme();
   const styles = createStyles(colors);
   const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -186,7 +187,7 @@ function TemplatePreviewBubble({ form }: { form: WhatsappTemplateFormValues }) {
           </View>
           <View style={styles.chatHeaderCopy}>
             <View style={styles.chatHeaderNameRow}>
-              <Text style={[styles.chatHeaderName, { color: colors.text }]}>Zurvis</Text>
+              <Text style={[styles.chatHeaderName, { color: colors.text }]} numberOfLines={1}>{channelName.trim() || 'WhatsApp'}</Text>
               <BadgeCheck color="#1DA1F2" fill="#1DA1F2" size={15} />
             </View>
           </View>
@@ -270,6 +271,7 @@ function TemplatePreviewBubble({ form }: { form: WhatsappTemplateFormValues }) {
 }
 
 export function WhatsappTemplateSheet({
+  channelName,
   visible,
   mode,
   template,
@@ -421,7 +423,7 @@ export function WhatsappTemplateSheet({
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}
           >
-            {(tab === 'preview' || !editable) ? <TemplatePreviewBubble form={form} /> : null}
+            {(tab === 'preview' || !editable) ? <TemplatePreviewBubble form={form} channelName={channelName} /> : null}
 
             {editable && tab === 'editor' ? (
               <>
@@ -708,7 +710,7 @@ export function WhatsappTemplateSheet({
               </>
             ) : null}
 
-            {!editable && template?.rejectionReason ? (
+            {!editable && template?.status === 'REJECTED' && template.rejectionReason ? (
               <View style={styles.rejectionBox}>
                 <Text style={styles.rejectionTitle}>Rejection reason</Text>
                 <Text style={styles.rejectionText}>{template.rejectionReason}</Text>
@@ -983,20 +985,20 @@ const createStyles = createThemedStyles((colors) => StyleSheet.create({
   avatar: {
     alignItems: 'center',
     backgroundColor: '#5b8cff',
-    borderRadius: radius.control,
-    height: 32,
+    borderRadius: radius.pill,
+    height: spacing.xxl,
     justifyContent: 'center',
-    width: 32,
+    width: spacing.xxl,
   },
   avatarInner: {
     backgroundColor: colors.surface,
     borderRadius: radius.badge,
-    height: 12,
-    width: 12,
+    height: spacing.sm,
+    width: spacing.sm,
   },
   chatHeaderCopy: { flex: 1, minWidth: 0 },
   chatHeaderNameRow: { alignItems: 'center', flexDirection: 'row', gap: spacing.xs },
-  chatHeaderName: { color: colors.text, fontSize: fontSize.body, fontWeight: fontWeight.extrabold },
+  chatHeaderName: { flexShrink: 1, color: colors.text, fontSize: fontSize.body, fontWeight: fontWeight.extrabold },
   chatBody: {
     backgroundColor: colors.surfaceSecondary,
     gap: spacing.control,

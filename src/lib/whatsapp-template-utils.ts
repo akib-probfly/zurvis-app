@@ -329,7 +329,9 @@ export function mapRemoteTemplate(template: {
     variables,
     version: 1,
     metaId: template.metaTemplateId ?? null,
-    rejectionReason: template.rejectionReason ?? null,
+    rejectionReason: template.rejectionReason?.trim() && template.rejectionReason.trim().toLowerCase() !== 'none'
+      ? template.rejectionReason.trim()
+      : null,
     createdAt: template.createdAt ?? new Date().toISOString(),
     updatedAt: template.updatedAt ?? new Date().toISOString(),
     source: 'remote',

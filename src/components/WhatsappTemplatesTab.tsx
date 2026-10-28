@@ -79,7 +79,7 @@ const TemplateCard = memo(function TemplateCard({ template, onView, onEdit, onUn
         </Text>
       </View>
       <Text style={[styles.cardBody, { color: colors.textSecondary }]} numberOfLines={2}>{template.body || 'No body content'}</Text>
-      {template.rejectionReason ? (
+      {template.status === 'REJECTED' && template.rejectionReason ? (
         <Text style={[styles.rejection, { color: colors.error }]} numberOfLines={2}>Rejected: {template.rejectionReason}</Text>
       ) : null}
       <View style={styles.cardActions}>
@@ -107,7 +107,7 @@ const TemplateCard = memo(function TemplateCard({ template, onView, onEdit, onUn
   );
 });
 
-export function WhatsappTemplatesTab({ channelId }: { channelId: string }) {
+export function WhatsappTemplatesTab({ channelId, channelName }: { channelId: string; channelName: string }) {
   const { colors } = useTheme();
   const queryClient = useQueryClient();
   const templates = useQuery({
@@ -301,6 +301,7 @@ export function WhatsappTemplatesTab({ channelId }: { channelId: string }) {
       )}
 
       <WhatsappTemplateSheet
+        channelName={channelName}
         visible={Boolean(sheet)}
         mode={sheetMode}
         template={sheet && sheet.mode !== 'create' ? sheet.template : null}
