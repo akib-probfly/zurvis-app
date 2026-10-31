@@ -26,6 +26,7 @@ import { setCallChrome, getFocusedCallConversationId, getCallPartyHint, getCallU
 import { getCallSessionStatusLabel, isCallSessionTerminal } from '../lib/inbox-utils';
 import type { CallConnectionState } from '../hooks/useWhatsappCallController';
 import { ColorfulAvatar } from './ColorfulAvatar';
+import { FloatingCallDock } from './FloatingCallDock';
 import { useTheme } from '../theme/ThemeContext';
 
 /**
@@ -548,7 +549,7 @@ export function CallPanel({
       {expanded ? null : remoteAudio}
 
       {embedInHeader ? null : (
-      <View style={[styles.dock, { top: Math.max(insets.top, 8) }]}>
+      <FloatingCallDock key={activeCallSession?.id ?? conversation.id} style={styles.dock}>
         <Pressable style={styles.dockMain} onPress={() => setExpanded(true)}>
           <ColorfulAvatar name={label} size={36} url={conversation.contact.avatarUrl} />
           <View style={styles.dockCopy}>
@@ -572,7 +573,7 @@ export function CallPanel({
         >
           {isBusy ? <ActivityIndicator color="#fff" /> : <PhoneOff color="#fff" size={18} />}
         </Pressable>
-      </View>
+      </FloatingCallDock>
       )}
 
       <Modal visible={expanded && isOngoing} animationType="slide" presentationStyle="fullScreen" onRequestClose={() => setExpanded(false)}>
