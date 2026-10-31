@@ -751,19 +751,52 @@ export function ContactsScreen() {
               {filterLayer === 'users' ? (
                 <>
                   <AppSearchField value={userSearch} onChangeText={setUserSearch} placeholder="Search owners" tone="background" />
-                  <Pressable style={[styles.optionRow, ownerId == null && [styles.optionRowActive, { backgroundColor: colors.surfaceSecondary }]]} onPress={() => setOwnerId(null)}>
-                    <Text style={[styles.optionText, { color: colors.textSecondary }, ownerId == null && [styles.optionTextActive, { color: colors.primary }]]}>Any owner</Text>
+                  <Text style={[styles.ownerHint, { color: colors.textMuted }]}>Filter contacts by their assigned owner.</Text>
+                  <Pressable
+                    style={[styles.ownerRow, { borderColor: ownerId == null ? colors.primary : colors.cardBorder, backgroundColor: ownerId == null ? colors.primarySoft : colors.surface }]}
+                    onPress={() => setOwnerId(null)}
+                    accessibilityRole="radio"
+                    accessibilityState={{ checked: ownerId == null }}
+                  >
+                    <View style={[styles.ownerAnyIcon, { backgroundColor: colors.surfaceSecondary }]}><ContactRound color={colors.primary} size={iconSize.md} /></View>
+                    <View style={styles.ownerCopy}>
+                      <Text style={[styles.ownerName, { color: ownerId == null ? colors.primary : colors.text }]}>Any owner</Text>
+                      <Text style={[styles.ownerEmail, { color: colors.textMuted }]}>Show contacts across all owners</Text>
+                    </View>
+                    <View style={[styles.ownerRadio, { borderColor: ownerId == null ? colors.primary : colors.cardBorder, backgroundColor: ownerId == null ? colors.primary : colors.surface }]}>
+                      {ownerId == null ? <Check color={colors.primaryText} size={iconSize.xs} /> : null}
+                    </View>
                   </Pressable>
-                  {assigneeOptions.map((member) => {
+                  <Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>Team members</Text>
+                  {assigneesQuery.isLoading ? <InlineSkeleton /> : assigneesQuery.isError ? (
+                    <Pressable onPress={() => { void assigneesQuery.refetch(); }} style={styles.ownerHint} accessibilityRole="button">
+                      <Text style={[styles.ownerEmail, { color: colors.primary }]}>Unable to load owners. Tap to retry.</Text>
+                    </Pressable>
+                  ) : assigneeOptions.map((member) => {
                     const active = ownerId === member.workspaceMemberId;
+                    const name = member.name?.trim() || member.email;
                     return (
-                      <Pressable key={member.workspaceMemberId} style={[styles.optionRow, active && [styles.optionRowActive, { backgroundColor: colors.surfaceSecondary }]]} onPress={() => setOwnerId(member.workspaceMemberId)}>
-                        <Text style={[styles.optionText, { color: colors.textSecondary }, active && [styles.optionTextActive, { color: colors.primary }]]} numberOfLines={1}>
-                          {member.name?.trim() || member.email}
-                        </Text>
+                      <Pressable
+                        key={member.workspaceMemberId}
+                        style={[styles.ownerRow, { borderColor: active ? colors.primary : colors.cardBorder, backgroundColor: active ? colors.primarySoft : colors.surface }]}
+                        onPress={() => setOwnerId(member.workspaceMemberId)}
+                        accessibilityRole="radio"
+                        accessibilityState={{ checked: active }}
+                      >
+                        <ColorfulAvatar name={name} url={member.avatarUrl} size={controlSize.compact} />
+                        <View style={styles.ownerCopy}>
+                          <Text style={[styles.ownerName, { color: active ? colors.primary : colors.text }]} numberOfLines={1}>{name}</Text>
+                          {member.name?.trim() ? <Text style={[styles.ownerEmail, { color: colors.textMuted }]} numberOfLines={1}>{member.email}</Text> : null}
+                        </View>
+                        <View style={[styles.ownerRadio, { borderColor: active ? colors.primary : colors.cardBorder, backgroundColor: active ? colors.primary : colors.surface }]}>
+                          {active ? <Check color={colors.primaryText} size={iconSize.xs} /> : null}
+                        </View>
                       </Pressable>
                     );
                   })}
+                  {!assigneesQuery.isLoading && !assigneesQuery.isError && !assigneeOptions.length ? (
+                    <Text style={[styles.emptyHint, { color: colors.textMuted }]}>{userSearch.trim() ? 'No owners match your search.' : 'No team members available.'}</Text>
+                  ) : null}
                 </>
               ) : null}
 
@@ -1315,6 +1348,13 @@ const createStyles = createThemedStyles((colors) => StyleSheet.create({
   optionRowActive: { backgroundColor: colors.primarySoft },
   optionText: { color: colors.text, flex: 1, fontSize: fontSize.section, fontWeight: fontWeight.medium },
   optionTextActive: { color: colors.primary, fontWeight: fontWeight.bold },
+  ownerHint: { marginTop: spacing.sm, marginBottom: spacing.md, fontSize: fontSize.small },
+  ownerRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, padding: spacing.sm, borderWidth: borderWidth.thin, borderRadius: radius.md, marginBottom: spacing.sm, minHeight: controlSize.large },
+  ownerAnyIcon: { width: controlSize.compact, height: controlSize.compact, borderRadius: radius.pill, alignItems: 'center', justifyContent: 'center' },
+  ownerCopy: { flex: 1, minWidth: 0, gap: spacing.xxs },
+  ownerName: { fontSize: fontSize.caption, fontWeight: fontWeight.semibold },
+  ownerEmail: { fontSize: fontSize.small },
+  ownerRadio: { width: iconSize.lg, height: iconSize.lg, borderRadius: radius.pill, borderWidth: borderWidth.thin, alignItems: 'center', justifyContent: 'center' },
   selectedTagCount: { fontSize: fontSize.small, marginVertical: spacing.sm },
   tagCloud: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
   tagPill: { alignItems: 'center', borderRadius: radius.pill, borderWidth: borderWidth.thin, flexDirection: 'row', gap: spacing.sm - 2, maxWidth: '100%', ...chipSize.compact },
