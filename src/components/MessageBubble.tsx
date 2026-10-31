@@ -183,7 +183,9 @@ function StandardMessageBubble({ message, outgoing, attachments, replyPreview, r
     if (isEmojiOnlyMessage(body)) {
       return <Text style={[styles.emojiOnly, outgoing && styles.outgoingText, !outgoing && { color: colors.text }]}>{body}</Text>;
     }
-    const clamp = canExpand && !expanded;
+    // Start with the four-line preview while native layout measures overflow.
+    // Waiting for canExpand briefly renders the full body and moves the list.
+    const clamp = !expanded;
     return (
       <View>
         <View style={clamp && hasAndroidInlineLink ? {
