@@ -98,20 +98,23 @@ export function ChannelTypeFilterList({
                 </View>
               </Pressable>
               <Pressable
-                style={[
+                style={styles.groupToggle}
+                onPress={() => onChange(toggleChannelIds(selectedIds, platformChannelIds, allSelected))}
+                accessibilityRole="checkbox"
+                accessibilityState={{ checked: someSelected ? 'mixed' : allSelected }}
+                accessibilityLabel={`Toggle all ${typeGroup.typeName} channels`}
+              >
+                <View style={[
                   styles.check,
                   { borderColor: colors.cardBorder },
                   (allSelected || someSelected) && { borderColor: colors.primary, backgroundColor: `${colors.primary}14` },
-                ]}
-                onPress={() => onChange(toggleChannelIds(selectedIds, platformChannelIds, allSelected))}
-                accessibilityLabel={`Toggle all ${typeGroup.typeName} channels`}
-              >
-                {allSelected ? <Check color={colors.primary} size={12} /> : someSelected ? <Minus color={colors.primary} size={12} /> : null}
+                ]}>
+                  {allSelected ? <Check color={colors.primary} size={12} /> : someSelected ? <Minus color={colors.primary} size={12} /> : null}
+                </View>
               </Pressable>
               <Pressable
                 style={styles.chevron}
                 onPress={() => toggleExpanded(typeGroup.typeKey)}
-                hitSlop={8}
                 accessibilityRole="button"
                 accessibilityLabel={`${expanded ? 'Collapse' : 'Expand'} ${typeGroup.typeName} channels`}
                 accessibilityState={{ expanded }}
@@ -122,12 +125,15 @@ export function ChannelTypeFilterList({
 
             {expanded ? (
               <View style={[styles.body, { borderTopColor: colors.cardBorder }]}>
-                <View style={styles.bodyHeader}>
+                <Pressable
+                  style={styles.bodyHeader}
+                  onPress={() => onChange(toggleChannelIds(selectedIds, platformChannelIds, allSelected))}
+                  accessibilityRole="button"
+                  accessibilityLabel={`${allSelected ? 'Clear' : 'Select'} all ${typeGroup.typeName} channels`}
+                >
                   <Text style={[styles.bodyLabel, { color: colors.textMuted }]}>All {typeGroup.typeName} channels</Text>
-                  <Pressable onPress={() => onChange(toggleChannelIds(selectedIds, platformChannelIds, allSelected))}>
-                    <Text style={[styles.selectAll, { color: colors.primary }]}>{allSelected ? 'Clear all' : 'Select all'}</Text>
-                  </Pressable>
-                </View>
+                  <Text style={[styles.selectAll, { color: colors.primary }]}>{allSelected ? 'Clear all' : 'Select all'}</Text>
+                </Pressable>
                 {typeGroup.channels.map((channel) => {
                   const active = selectedIds.includes(channel.channelId);
                   return (
@@ -189,11 +195,12 @@ const styles = StyleSheet.create({
   countBadge: { borderRadius: radius.pill, minWidth: 20, paddingHorizontal: spacing.xs, paddingVertical: spacing.xxs },
   countBadgeText: { fontSize: fontSize.small, fontWeight: fontWeight.bold, textAlign: 'center' },
   check: { alignItems: 'center', borderRadius: radius.pill, borderWidth: borderWidth.thin, height: 18, justifyContent: 'center', width: 18 },
-  chevron: { alignItems: 'center', height: 28, justifyContent: 'center', width: 28 },
+  groupToggle: { alignItems: 'center', justifyContent: 'center', height: controlSize.touchTarget, width: controlSize.touchTarget },
+  chevron: { alignItems: 'center', height: controlSize.touchTarget, justifyContent: 'center', width: controlSize.touchTarget },
   body: { borderTopWidth: borderWidth.thin, gap: spacing.xs + spacing.xxs, padding: spacing.xs + spacing.xxs },
-  bodyHeader: { alignItems: 'center', flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: spacing.xxs },
-  bodyLabel: { fontSize: fontSize.tiny, fontWeight: fontWeight.bold, letterSpacing: letterSpacing.overline, textTransform: 'uppercase' },
-  selectAll: { fontSize: fontSize.small, fontWeight: fontWeight.bold },
+  bodyHeader: { alignItems: 'center', flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: spacing.xxs, minHeight: controlSize.touchTarget, gap: spacing.sm },
+  bodyLabel: { flex: 1, fontSize: fontSize.tiny, fontWeight: fontWeight.bold, letterSpacing: letterSpacing.overline, textTransform: 'uppercase' },
+  selectAll: { flexShrink: 0, fontSize: fontSize.small, fontWeight: fontWeight.bold },
   childRow: { alignItems: 'center', borderRadius: radius.md, borderWidth: borderWidth.thin, flexDirection: 'row', gap: spacing.sm, paddingHorizontal: spacing.sm, paddingVertical: spacing.xs + spacing.xxs },
   childName: { fontSize: fontSize.caption, fontWeight: fontWeight.bold },
   childMeta: { fontSize: fontSize.small, marginTop: spacing.xxs },
