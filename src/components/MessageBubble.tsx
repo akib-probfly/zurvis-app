@@ -9,7 +9,7 @@ import { isAudioAttachment, isImageAttachment, isVideoAttachment, previewUrl, vi
 import { borderWidth, fontSize, fontWeight, lineHeight, radius, spacing } from '../theme/tokens';
 import { Check, CheckCheck, FileText, ExternalLink, ChevronDown, ChevronUp, Megaphone, Sparkles, PackagePlus } from 'lucide-react-native';
 import { useState, useMemo } from 'react';
-import { ActivityIndicator, Platform, Pressable, Text, View } from 'react-native';
+import { ActivityIndicator, Platform, Pressable, Text, View, useWindowDimensions } from 'react-native';
 import { AuthenticatedImage } from './AuthenticatedImage';
 import { VideoThumb } from './VideoThumb';
 import { VoiceNotePlayer } from './VoiceNotePlayer';
@@ -68,6 +68,7 @@ export function MessageBubble(props: any) {
 
 function StandardMessageBubble({ message, outgoing, attachments, replyPreview, reactions, onImage, onVideo, onLongPress, onReplyPress, channelName, channelType, channelId, onCreateOrderFromMessage, creatingOrderDraft }: any) {
   const { colors } = useTheme();
+  const { fontScale, width: windowWidth } = useWindowDimensions();
   const styles = createStyles(colors);
   const mediaType = (message.type ?? '').toUpperCase();
   const isInstagramSharedPostTemplate =
@@ -162,16 +163,17 @@ function StandardMessageBubble({ message, outgoing, attachments, replyPreview, r
   const statusMeta = outgoing ? getOutboundStatusMeta(message.deliveryStatus) : null;
   const edited = isMessageEdited(message);
   const failedReason = outgoing && statusMeta?.showFailed ? getMessageFailureReason(message) : null;
-  const bodyKey = `${message.id}\u0000${body}`;
+  const bodyKey = `${message.id}\u0000${body}\u0000${windowWidth}:${fontScale}`;
   const [expandedBodyKey, setExpandedBodyKey] = useState<string | null>(null);
   const [overflowBodyKey, setOverflowBodyKey] = useState<string | null>(null);
+  const [inlineBodyLayout, setInlineBodyLayout] = useState<{ key: string; collapsedHeight: number } | null>(null);
   const expanded = expandedBodyKey === bodyKey;
   // Native line measurements can be missing or delayed in recycled list cells.
   // Clearly long bodies must still start collapsed and expose the toggle.
   // Android's decorated spans can crash when numberOfLines clips their range.
-  // Keep inline links visible by rendering their entire message body.
+  // Clip the container for inline links instead of truncating native spans.
   const hasAndroidInlineLink = Platform.OS === 'android' && bodyParts.some((part) => (part.href?.startsWith('tel:') || part.href?.startsWith('mailto:')));
-  const canExpand = !hasAndroidInlineLink && (overflowBodyKey === bodyKey
+  const canExpand = (overflowBodyKey === bodyKey
     || body.length > 400
     || body.split('\n').length > COLLAPSED_LINE_COUNT);
   const [openingDocumentId, setOpeningDocumentId] = useState<string | null>(null);
@@ -184,11 +186,23 @@ function StandardMessageBubble({ message, outgoing, attachments, replyPreview, r
     const clamp = canExpand && !expanded;
     return (
       <View>
+        <View style={clamp && hasAndroidInlineLink ? {
+          maxHeight: inlineBodyLayout?.key === bodyKey ? inlineBodyLayout.collapsedHeight : COLLAPSED_LINE_COUNT * styles.inlineLinkBody.lineHeight * fontScale,
+          overflow: 'hidden',
+        } : undefined}>
         <Text
           style={[outgoing ? styles.outgoingText : [styles.messageText, { color: colors.text }], hasAndroidInlineLink && styles.inlineLinkBody]}
-          numberOfLines={clamp ? COLLAPSED_LINE_COUNT : undefined}
+          numberOfLines={clamp && !hasAndroidInlineLink ? COLLAPSED_LINE_COUNT : undefined}
           onTextLayout={(e) => {
-            if (!hasAndroidInlineLink && !canExpand && e.nativeEvent.lines.length > COLLAPSED_LINE_COUNT) setOverflowBodyKey(bodyKey);
+            const lines = e.nativeEvent.lines;
+            if (!canExpand && lines.length > COLLAPSED_LINE_COUNT) setOverflowBodyKey(bodyKey);
+            const lastVisibleLine = lines[COLLAPSED_LINE_COUNT - 1];
+            if (hasAndroidInlineLink && lastVisibleLine) {
+              const collapsedHeight = lastVisibleLine.y + lastVisibleLine.height;
+              if (inlineBodyLayout?.key !== bodyKey || inlineBodyLayout.collapsedHeight !== collapsedHeight) {
+                setInlineBodyLayout({ key: bodyKey, collapsedHeight });
+              }
+            }
           }}
         >
           {bodyParts.map((part, index) => (part.href?.startsWith('tel:') || part.href?.startsWith('mailto:')) ? (
@@ -199,6 +213,7 @@ function StandardMessageBubble({ message, outgoing, attachments, replyPreview, r
             <Text key={index}>{part.value}</Text>
           ))}
         </Text>
+        </View>
         {canExpand ? (
           <Pressable
             onPress={() => setExpandedBodyKey(expanded ? null : bodyKey)}
