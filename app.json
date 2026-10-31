@@ -2,7 +2,7 @@
     "expo":  {
                  "name":  "Zurvis",
                  "slug":  "osaas-mobile",
-                 "version":  "1.0.27",
+                 "version":  "1.0.28",
                  "scheme":  "osaas",
                  "icon":  "./assets/icon.png",
                  "userInterfaceStyle":  "light",
@@ -10,7 +10,7 @@
                  "ios":  {
                              "supportsTablet":  true,
                              "bundleIdentifier":  "com.zurvis.mobile",
-                             "buildNumber":  "28",
+                             "buildNumber":  "29",
                              "infoPlist":  {
                                                "CFBundleDisplayName":  "Zurvis",
                                                "CFBundleName":  "Zurvis",
